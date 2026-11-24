@@ -1,0 +1,2445 @@
+<!DOCTYPE html><html lang="en"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CareConnect_App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&amp;family=Playfair+Display:wght@700&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['DM Sans', 'sans-serif'], display: ['Playfair Display', 'serif'] },
+                    colors: {
+                        pri: { 50:'#EEF0FF', 100:'#DFE3FF', 200:'#C5CAFF', 300:'#A2A6FF', 400:'#7B7AFF', 500:'#5D5CDE', 600:'#4A3FCC', 700:'#3D33B0', 800:'#342D8E', 900:'#1E1A5A' },
+                        sf: { 50:'#F8FAFC', 100:'#F1F5F9', 200:'#E2E8F0', 800:'#1E293B', 900:'#0F172A', 950:'#020617' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        html, body { overscroll-behavior: none; font-family: 'DM Sans', sans-serif; margin: 0; padding: 0; height: 100%; }
+
+        /* Demo Layout */
+        .demo-container { display: flex; height: 100vh; background: #f1f5f9; }
+        .demo-sidebar { width: 280px; background: white; border-right: 1px solid #e2e8f0; overflow-y: auto; flex-shrink: 0; }
+        .dark .demo-sidebar { background: #1e293b; border-right-color: #334155; }
+        .demo-content { flex: 1; display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; padding: 20px 0; }
+        .app { max-width: 430px; width: 100%; min-height: 100dvh; position: relative; overflow-x: hidden; background: white; box-shadow: 0 0 40px rgba(0,0,0,0.1); border-radius: 12px; }
+        .dark .app { background: #020617; }
+
+        /* Sidebar styles */
+        .sidebar-link { display: block; padding: 10px 16px; text-decoration: none; color: #475569; font-size: 14px; transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar-link:hover { background: #f1f5f9; color: #5D5CDE; }
+        .sidebar-link.active { background: #eef0ff; color: #5D5CDE; border-left-color: #5D5CDE; font-weight: 500; }
+        .dark .sidebar-link { color: #cbd5e1; }
+        .dark .sidebar-link:hover { background: #334155; color: #a2a6ff; }
+        .dark .sidebar-link.active { background: #1e1a5a; color: #a2a6ff; border-left-color: #a2a6ff; }
+
+        .sidebar-section { padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
+
+        /* Screen transitions */
+        .scr { display: none; animation: sUp .3s ease-out; }
+        .scr.on { display: flex; flex-direction: column; }
+        @keyframes sUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse2 { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+
+        /* Bottom nav */
+        .bnav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; z-index: 40; padding-bottom: env(safe-area-inset-bottom); }
+        .bnav .ni { transition: all .2s; }
+        .bnav .ni.on i, .bnav .ni.on span { color: #5D5CDE; }
+        .dark .bnav .ni.on i, .dark .bnav .ni.on span { color: #A2A6FF; }
+
+        /* Utility classes */
+        .ecard { transition: transform .15s; }
+        .ecard:active { transform: scale(.97); }
+        .savail { background: #DCFCE7; color: #166534; }
+        .dark .savail { background: #14532D; color: #86EFAC; }
+        .sbusy { background: #FEF9C3; color: #854D0E; }
+        .dark .sbusy { background: #713F12; color: #FDE68A; }
+        .splash { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; transition: opacity .5s; }
+        .splash.hide { opacity: 0; pointer-events: none; }
+        .noscr::-webkit-scrollbar { display: none; }
+        .noscr { -ms-overflow-style: none; scrollbar-width: none; }
+        input, select, textarea { font-size: 16px!important; }
+        .toast { animation: tIn .3s ease-out, tOut .3s ease-in 2.7s forwards; }
+        @keyframes tIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes tOut { from { opacity: 1; } to { opacity: 0; } }
+        .mesh { background: radial-gradient(ellipse at 20% 50%, rgba(93,92,222,.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(124,58,237,.08) 0%, transparent 50%); }
+        .dark .mesh { background: radial-gradient(ellipse at 20% 50%, rgba(93,92,222,.2) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(124,58,237,.15) 0%, transparent 50%); }
+        .dlv1 { border-left: 3px solid #22c55e; }
+        .dlv2 { border-left: 3px solid #3b82f6; }
+        .dlv3 { border-left: 3px solid #f59e0b; }
+        .dlv4 { border-left: 3px solid #ef4444; }
+        .wm-overlay { position: absolute; bottom: 8px; left: 8px; right: 8px; padding: 4px 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 9px; border-radius: 6px; pointer-events: none; }
+        video::-webkit-media-controls { display: none!important; }
+
+        /* Mobile responsive sidebar */
+        @media (max-width: 768px) {
+            .demo-sidebar { position: fixed; left: -280px; top: 0; bottom: 0; z-index: 50; transition: left 0.3s; }
+            .demo-sidebar.open { left: 0; }
+            .demo-content { padding: 0; }
+            .app { border-radius: 0; box-shadow: none; }
+        }
+    </style>
+</head>
+<body class="bg-sf-100 dark:bg-sf-950 text-gray-900 dark:text-gray-100">
+
+<!-- Splash -->
+<div id="splash" class="splash bg-sf-900">
+    <div class="text-center">
+        <div class="text-6xl mb-4" style="animation:pulse2 1.5s infinite">💜</div>
+        <h1 class="font-display text-3xl text-white mb-1">CareConnect</h1>
+        <p class="text-pri-300 text-sm tracking-widest uppercase">Hong Kong Demo</p>
+    </div>
+</div>
+
+<div class="demo-container">
+    <!-- DEMO SIDEBAR -->
+    <aside id="demo-sidebar" class="demo-sidebar">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 class="font-display text-xl text-pri-600 dark:text-pri-300">CareConnect Demo</h2>
+            <p class="text-xs text-gray-500 mt-1">Interactive Presentation Mode</p>
+        </div>
+
+        <div class="sidebar-section">Common Views</div>
+        <a href="#" class="sidebar-link" onclick="demoGo('login'); return false;"><i class="fa-solid fa-right-to-bracket w-5"></i> Shared Login</a>
+        <a href="#" class="sidebar-link" onclick="demoGo('register'); return false;"><i class="fa-solid fa-user-plus w-5"></i> Register (All Roles)</a>
+
+        <div class="sidebar-section">Role Dashboards</div>
+        <a href="#" class="sidebar-link" onclick="loadDemoRole('patient'); return false;"><i class="fa-solid fa-user w-5"></i> Patient Dashboard</a>
+        <a href="#" class="sidebar-link" onclick="loadDemoRole('escort'); return false;"><i class="fa-solid fa-hand-holding-medical w-5"></i> Escort Dashboard</a>
+        <a href="#" class="sidebar-link" onclick="loadDemoRole('guardian'); return false;"><i class="fa-solid fa-users w-5"></i> Guardian Dashboard</a>
+
+        <div class="sidebar-section">Demo Controls</div>
+        <button onclick="resetDemoState()" class="w-full mx-4 mb-4 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium active:scale-95 transition-transform" style="width: calc(100% - 32px);">
+            <i class="fa-solid fa-rotate-right mr-1"></i> Reset Demo State
+        </button>
+    </aside>
+
+    <!-- DEMO CONTENT -->
+    <div class="demo-content">
+        <div class="app bg-sf-50 dark:bg-sf-950">
+
+<!-- ============================== LOGIN ============================== -->
+<div id="scr-login" class="scr min-h-screen">
+    <div class="flex-1 flex flex-col items-center justify-center px-8 mesh">
+        <div class="text-5xl mb-4">💜</div>
+        <h1 class="font-display text-2xl mb-1 text-center">CareConnect HK</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center">Medical Escort Platform</p>
+
+        <div class="w-full max-w-xs space-y-4">
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Email or Phone</label>
+                <input type="text" id="login-email" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500">
+            </div>
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Password</label>
+                <input type="password" id="login-password" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500">
+            </div>
+            <button onclick="handleLogin()" class="w-full bg-pri-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform">Login</button>
+            <button onclick="demoGo('register')" class="w-full border-2 border-pri-500 text-pri-500 py-3.5 rounded-2xl font-medium active:scale-95 transition-transform">Create Account / Register</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================== REGISTER ============================== -->
+<div id="scr-register" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="demoGo('login')" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">Create Account</h2>
+    </div>
+
+    <!-- Role Selector Tabs -->
+    <div class="px-5 pt-4 pb-2">
+        <p class="text-xs font-medium text-gray-500 mb-2">Select your role to see required fields:</p>
+        <div class="flex gap-2">
+            <button onclick="selectRegRole('patient')" id="reg-tab-patient" class="flex-1 px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 font-medium text-sm">👤 Patient</button>
+            <button onclick="selectRegRole('escort')" id="reg-tab-escort" class="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-sf-800 text-gray-600 dark:text-gray-300 font-medium text-sm">🤝 Escort</button>
+            <button onclick="selectRegRole('guardian')" id="reg-tab-guardian" class="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-sf-800 text-gray-600 dark:text-gray-300 font-medium text-sm">👨‍👩‍👧 Guardian</button>
+        </div>
+    </div>
+
+    <div class="px-5 pt-2 pb-8">
+        <form id="reg-form" onsubmit="handleRegister(event)" class="space-y-4">
+            <input type="hidden" name="role" id="reg-role-input" value="patient">
+
+            <!-- Common fields -->
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-xs font-medium text-gray-500 mb-1 block">First Name</label><input type="text" name="firstName" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500"></div>
+                <div><label class="text-xs font-medium text-gray-500 mb-1 block">Last Name</label><input type="text" name="lastName" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500"></div>
+            </div>
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Email</label><input type="email" name="email" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500"></div>
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Phone</label><input type="tel" name="phone" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500"></div>
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Password</label><input type="password" name="password" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500"></div>
+
+            <!-- Patient-only fields -->
+            <div id="reg-patient-fields" class="space-y-4">
+                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
+                    <p class="text-xs text-blue-600 dark:text-blue-300"><i class="fa-solid fa-info-circle mr-1"></i>After registration, complete your Medical Portal with disability level, addresses, and HA Go link before booking.</p>
+                </div>
+            </div>
+
+            <!-- Escort-only fields -->
+            <div id="reg-escort-fields" class="hidden space-y-4">
+                <div><label class="text-xs font-medium text-gray-500 mb-1 block">Experience</label>
+                    <select name="experience" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                        <option value="none">None</option><option value="some">Some</option><option value="experienced">Experienced</option><option value="professional">Healthcare professional</option>
+                    </select>
+                </div>
+                <div><label class="text-xs font-medium text-gray-500 mb-1 block">Languages</label>
+                    <div class="flex flex-wrap gap-3">
+                        <label class="flex items-center gap-2"><input type="checkbox" name="languages" value="cantonese" class="w-5 h-5 rounded accent-pri-500"><span class="text-sm">Cantonese</span></label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="languages" value="mandarin" class="w-5 h-5 rounded accent-pri-500"><span class="text-sm">Mandarin</span></label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="languages" value="english" class="w-5 h-5 rounded accent-pri-500"><span class="text-sm">English</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guardian-only fields -->
+            <div id="reg-guardian-fields" class="hidden space-y-4">
+                <div><label class="text-xs font-medium text-gray-500 mb-1 block">Relationship to Patient</label>
+                    <select name="relationship" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                        <option>Son/Daughter</option><option>Spouse</option><option>Sibling</option><option>Other Family</option><option>Social Worker</option>
+                    </select>
+                </div>
+                <div><label class="text-xs font-medium text-gray-500 mb-1 block">Patient Code(s) to Link</label>
+                    <input type="text" name="patientCodeLink" placeholder="Enter patient's P-XXXX code(s)" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <p class="text-[10px] text-gray-400 mt-1">Ask the patient for their Patient Code to link accounts. Separate multiple codes with commas.</p>
+                </div>
+            </div>
+
+            <button type="submit" id="reg-submit-btn" class="w-full bg-pri-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform">Create Account</button>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ==================== PATIENT SCREENS ======================= -->
+<!-- ============================================================ -->
+
+<!-- PATIENT HOME -->
+<div id="scr-p-home" class="scr min-h-screen pb-24">
+    <!-- Top Header -->
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center justify-between">
+        <h1 class="font-display text-xl text-pri-600 dark:text-pri-300">CareConnect</h1>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 px-2 py-1 rounded-full font-medium" id="p-code-badge">P-0384</span>
+            <button onclick="go('p-profile')" class="w-9 h-9 rounded-full bg-pri-100 dark:bg-pri-900 flex items-center justify-center"><i class="fa-solid fa-user text-pri-600 dark:text-pri-300 text-sm"></i></button>
+        </div>
+    </div>
+
+    <!-- Block 1: User Profile Card -->
+    <div class="px-5 pt-2 pb-4">
+        <button onclick="go('p-portal')" class="w-full bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 active:scale-[.98] transition-transform border-2 border-gray-200 dark:border-gray-700">
+            <div class="w-14 h-14 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center text-2xl">👤</div>
+            <div class="flex-1 text-left">
+                <h2 class="font-medium text-base" id="p-home-name">Mrs. Chan</h2>
+                <p class="text-xs text-gray-500" id="p-home-code">P-0384</p>
+                <span class="inline-block text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 mt-1" id="p-home-dlvl">Lv 2 — Cane</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-gray-300 dark:text-gray-600"></i>
+        </button>
+    </div>
+
+    <!-- 7-Day Unmatched Alert Banner -->
+    <div id="p-unmatched-alert" class="mx-5 mb-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl p-4">
+        <div class="flex items-center gap-3 mb-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl"></i>
+            <div>
+                <p class="font-medium text-sm text-amber-700 dark:text-amber-300">Escort Needed Within 7 Days!</p>
+                <p class="text-xs text-amber-600 dark:text-amber-400">Upcoming appointment has no escort paired yet</p>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-sf-800 rounded-xl p-3 mb-2">
+            <p class="text-sm font-medium">Cardiology — Queen Mary Hospital</p>
+            <p class="text-xs text-gray-500">Tomorrow, 10:00 AM</p>
+            <p class="text-xs text-red-500 font-medium mt-1">⚠️ No escort matched yet</p>
+        </div>
+        <button onclick="increaseWage()" class="w-full bg-amber-500 text-white py-2.5 rounded-xl text-sm font-medium active:scale-95 transition-transform">
+            <i class="fa-solid fa-dollar-sign mr-1"></i> Increase Hourly Wage (+$20/hr)
+        </button>
+    </div>
+
+    <!-- Block 2: Active Appointment (Today) -->
+    <div class="mx-5 mb-4">
+        <h3 class="font-bold text-sm mb-2">Active Appointment (Today)</h3>
+        <div id="p-active-booking">
+            <button onclick="go('active-appt')" class="w-full bg-gradient-to-r from-pri-500 to-purple-600 text-white rounded-2xl p-4 flex items-center gap-3 active:scale-[.98] transition-transform shadow-lg">
+                <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center" style="animation:pulse2 2s infinite"><i class="fa-solid fa-location-dot"></i></div>
+                <div class="flex-1 text-left">
+                    <p class="font-medium text-sm">Active Escort Session</p>
+                    <p class="text-xs opacity-80" id="p-active-escort-info">Mary Chan • Queen Mary Hospital</p>
+                </div>
+                <i class="fa-solid fa-chevron-right text-sm opacity-60"></i>
+            </button>
+        </div>
+        <div id="p-no-booking" class="bg-white dark:bg-sf-800 rounded-2xl p-6 text-center shadow-sm">
+            <i class="fa-regular fa-calendar-check text-3xl text-gray-300 mb-2"></i>
+            <p class="text-sm text-gray-500">No active appointment today</p>
+        </div>
+    </div>
+
+    <!-- Block 3: Requests & Past Records -->
+    <div class="mx-5 mb-4">
+        <h3 class="font-bold text-sm mb-2">Upcoming Requests &amp; Records</h3>
+        <div class="space-y-2">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="font-medium text-sm">Cardiology Follow-up</p>
+                    <span class="text-[10px] savail px-2 py-0.5 rounded-full">Confirmed</span>
+                </div>
+                <p class="text-xs text-gray-500">Tomorrow, 10:00 AM • Mary Chan</p>
+                <p class="text-xs text-gray-500">Queen Mary Hospital</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block 4: HA Go Linked Appointments + Book Escort CTA -->
+    <div class="mx-5 mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-sm">Linked with HA Go</h3>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"><i class="fa-solid fa-link text-[8px] mr-1"></i>Synced</span>
+        </div>
+        <div class="space-y-2 mb-3">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm dlv2">
+                <p class="font-medium text-sm">Cardiology Follow-up</p>
+                <p class="text-xs text-gray-500 mt-1"><i class="fa-regular fa-calendar mr-1"></i>Tomorrow, 10:00 AM</p>
+                <p class="text-xs text-gray-500"><i class="fa-solid fa-hospital mr-1"></i>Queen Mary Hospital</p>
+                <button onclick="go('p-book')" class="mt-2 text-xs text-pri-500 font-medium"><i class="fa-solid fa-plus mr-1"></i>Book Escort for This</button>
+            </div>
+        </div>
+        <button onclick="go('p-book')" class="w-full bg-pri-500 text-white py-3 rounded-xl font-medium active:scale-95 transition-transform">
+            <i class="fa-solid fa-calendar-plus mr-1"></i> Launch a Request / Book Escort
+        </button>
+    </div>
+</div>
+
+<!-- PATIENT MEDICAL PORTAL -->
+<div id="scr-p-portal" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">Medical Portal</h2>
+    </div>
+
+    <div class="px-5 pt-2 pb-8 space-y-4">
+        <!-- Patient Code Card -->
+        <div class="bg-gradient-to-br from-pri-500 to-blue-600 rounded-2xl p-5 text-white text-center shadow-lg">
+            <p class="text-xs opacity-70 uppercase tracking-wider mb-1">Your Patient Code</p>
+            <p class="text-3xl font-bold tracking-wider font-mono" id="portal-code">P-0384</p>
+            <p class="text-[10px] opacity-60 mt-1">Share this code with your guardian or escort</p>
+        </div>
+
+        <!-- Medical Information Form -->
+        <form id="portal-form" onsubmit="savePortal(event)" class="space-y-4">
+            <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200"><i class="fa-solid fa-notes-medical text-pri-500 mr-1"></i>Medical Information</h3>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Disability Level</label>
+                <select name="disabilityLevel" id="portal-dlvl" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500">
+                    <option value="">Select your level</option>
+                    <option value="1">Lv 1 — Independent</option>
+                    <option value="2" selected="">Lv 2 — Cane / Walking aids</option>
+                    <option value="3">Lv 3 — Simple wheelchair</option>
+                    <option value="4">Lv 4 — Wheelchair with vital equipment</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Medical Conditions / Notes</label>
+                <textarea name="medicalNotes" id="portal-medical" rows="2" placeholder="e.g. Diabetes, heart condition, medication allergies..." class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500 text-sm"></textarea>
+            </div>
+
+            <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200 pt-2"><i class="fa-solid fa-location-dot text-pri-500 mr-1"></i>Address Information</h3>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Primary Address</label>
+                <input type="text" name="primaryAddress" id="portal-addr1" placeholder="Home address for pickup" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500">
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Secondary Address (optional)</label>
+                <input type="text" name="secondaryAddress" id="portal-addr2" placeholder="Alternate pickup address" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500">
+            </div>
+
+            <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200 pt-2"><i class="fa-solid fa-link text-pri-500 mr-1"></i>Linked Accounts</h3>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">HA Go ID</label>
+                <input type="text" name="haGoId" id="portal-hago" placeholder="Link your HA Go account" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500">
+            </div>
+
+            <button type="submit" id="portal-save-btn" data-filled="false" class="w-full bg-pri-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform">
+                <i class="fa-solid fa-check mr-1"></i>Save Medical Information
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- PATIENT BOOK ESCORT (Expanded Form) -->
+<div id="scr-p-book" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">Launch a Request / Book Escort</h2>
+    </div>
+
+    <div class="px-5 pt-2 pb-8">
+        <form id="p-book-form" onsubmit="submitPatientBooking(event)" class="space-y-4">
+            <!-- Disability Level (auto-filled from portal) -->
+            <div class="bg-pri-50 dark:bg-pri-900/20 rounded-xl p-3 flex items-center gap-3">
+                <div class="w-8 h-8 bg-pri-100 dark:bg-pri-900 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-wheelchair text-pri-500 text-xs"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium" id="book-dlvl-display">Lv 2 — Cane</p>
+                    <p class="text-[10px] text-gray-400">From your Medical Portal</p>
+                </div>
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Appointment Date</label>
+                <input type="date" name="date" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Appointment Time</label>
+                <input type="time" name="time" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Estimated Total Duration (Hours)</label>
+                <input type="number" name="duration" min="1" max="12" step="0.5" placeholder="e.g. 3.5" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Hospital / Clinic</label>
+                <select name="hospital" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <option value="">Select hospital</option>
+                    <optgroup label="Quick Defaults">
+                        <option>Most Visited Hospital</option>
+                        <option>Most Visited Clinic</option>
+                    </optgroup>
+                    <optgroup label="Hong Kong Island">
+                        <option>Queen Mary Hospital</option>
+                        <option>Pamela Youde Nethersole Eastern Hospital</option>
+                    </optgroup>
+                    <optgroup label="Kowloon">
+                        <option>Queen Elizabeth Hospital</option>
+                        <option>Princess Margaret Hospital</option>
+                    </optgroup>
+                    <optgroup label="New Territories">
+                        <option>Prince of Wales Hospital</option>
+                        <option>Tuen Mun Hospital</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Service Type</label>
+                <select name="serviceType" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <option>One-time</option>
+                    <option>Regular (Weekly)</option>
+                    <option>Regular (Monthly)</option>
+                </select>
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Service Scope</label>
+                <select name="serviceScope" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <option>Home to Home (back to origin)</option>
+                    <option>Hospital to Home</option>
+                    <option>Only Hospital</option>
+                </select>
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Transportation</label>
+                <select name="transportation" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <option>Walking only</option>
+                    <option>Public Transport</option>
+                    <option>Taxi (fee on patient)</option>
+                </select>
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Pick-up Location</label>
+                <select name="pickupLocation" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <option>Home</option>
+                    <option>Nearest MTR</option>
+                    <option>At Hospital</option>
+                    <option>Custom (specify in notes)</option>
+                </select>
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Drop-off Location</label>
+                <select name="dropoffLocation" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <option>Home</option>
+                    <option>Nearest MTR</option>
+                    <option>At Hospital</option>
+                    <option>Custom (specify in notes)</option>
+                </select>
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Hourly Wage (HKD)</label>
+                <input type="number" name="hourlyWage" min="50" max="300" step="10" placeholder="e.g. 100" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Transportation Compensation (HKD)</label>
+                <input type="number" name="transportComp" min="0" max="100" step="5" placeholder="e.g. 30" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
+                <p class="text-xs text-blue-600 dark:text-blue-300"><i class="fa-solid fa-shield-halved mr-1"></i><strong>Privacy Notice:</strong> No privacy information (e.g. Patient Name, exact home address) is shared until the request is confirmed.</p>
+            </div>
+
+            <button type="submit" id="p-book-submit-btn" data-filled="false" class="w-full bg-pri-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform">Submit Booking Request</button>
+        </form>
+    </div>
+</div>
+
+<!-- PATIENT PROFILE -->
+<div id="scr-p-profile" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">My Profile</h2>
+    </div>
+    <div class="px-5 pt-4 space-y-4 pb-8">
+        <div class="bg-white dark:bg-sf-800 rounded-2xl p-5 text-center shadow-sm">
+            <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div>
+            <h3 class="font-medium text-lg">Mrs. Chan</h3>
+            <p class="text-xs text-gray-500">chan@email.com</p>
+            <div class="mt-2 flex items-center justify-center gap-2">
+                <span class="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-full font-medium">P-0384</span>
+                <span class="text-xs bg-pri-100 dark:bg-pri-900 text-pri-600 dark:text-pri-300 px-3 py-1 rounded-full">Lv 2</span>
+            </div>
+        </div>
+        <button onclick="go('p-portal')" class="w-full bg-pri-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform flex items-center justify-center gap-2">
+            <i class="fa-solid fa-notes-medical"></i> Edit Medical Portal
+        </button>
+        <button onclick="doLogout()" class="w-full py-3.5 rounded-2xl border-2 border-red-200 dark:border-red-900 text-red-500 font-medium active:scale-95 transition-transform">Sign Out</button>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ==================== ESCORT SCREENS ======================== -->
+<!-- ============================================================ -->
+
+<!-- ESCORT HOME -->
+<div id="scr-e-home" class="scr min-h-screen pb-24">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center justify-between">
+        <h1 class="font-display text-xl text-pri-600 dark:text-pri-300">CareConnect</h1>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 px-2 py-1 rounded-full font-medium">E-1088</span>
+            <button onclick="go('e-profile')" class="w-9 h-9 rounded-full bg-pri-100 dark:bg-pri-900 flex items-center justify-center"><i class="fa-solid fa-user text-pri-600 dark:text-pri-300 text-sm"></i></button>
+        </div>
+    </div>
+
+    <!-- Block 1: User Profile Card -->
+    <!-- Block 1: User Profile Card (Clickable) -->
+    <div class="px-5 pt-2 pb-4">
+        <button onclick="go('e-info')" class="w-full bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 active:scale-[.98] transition-transform border-2 border-gray-200 dark:border-gray-700">
+            <div class="w-14 h-14 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center text-2xl">🤝</div>
+            <div class="flex-1 text-left">
+                <h2 class="font-medium text-base">Mary Chan</h2>
+                <p class="text-xs text-gray-500">E-1088</p>
+                <span class="inline-block text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 mt-1">Experienced • Lv 1-3</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-gray-300 dark:text-gray-600"></i>
+        </button>
+    </div>
+
+    <!-- Block 2: Active Escort Session (Today) -->
+    <div class="mx-5 mb-4">
+        <h3 class="font-bold text-sm mb-2">Active Session (Today)</h3>
+        <button onclick="go('active-appt')" class="w-full bg-gradient-to-r from-pri-500 to-purple-600 text-white rounded-2xl p-4 flex items-center gap-3 active:scale-[.98] transition-transform shadow-lg">
+            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center" style="animation:pulse2 2s infinite"><i class="fa-solid fa-location-dot"></i></div>
+            <div class="flex-1 text-left">
+                <p class="font-medium text-sm">Active Escort Session</p>
+                <p class="text-xs opacity-80">Mrs. Chan • Queen Mary Hospital</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-sm opacity-60"></i>
+        </button>
+    </div>
+
+    <!-- Block 3: Upcoming Calendar -->
+    <div class="mx-5 mb-4">
+        <h3 class="font-bold text-sm mb-2">Upcoming Calendar</h3>
+        <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm">
+            <div class="grid grid-cols-7 gap-2 text-center mb-3">
+                <div class="text-[10px] text-gray-400">M</div>
+                <div class="text-[10px] text-gray-400">T</div>
+                <div class="text-[10px] text-gray-400">W</div>
+                <div class="text-[10px] text-gray-400">T</div>
+                <div class="text-[10px] text-gray-400">F</div>
+                <div class="text-[10px] text-gray-400">S</div>
+                <div class="text-[10px] text-gray-400">S</div>
+                <div class="text-xs py-2 text-gray-400">1</div>
+                <div class="text-xs py-2 relative font-medium">2<span class="absolute top-1 right-1 w-1.5 h-1.5 bg-pri-500 rounded-full"></span></div>
+                <div class="text-xs py-2">3</div>
+                <div class="text-xs py-2 relative">4<span class="absolute top-1 right-1 w-1.5 h-1.5 bg-amber-500 rounded-full"></span></div>
+                <div class="text-xs py-2">5</div>
+                <div class="text-xs py-2">6</div>
+                <div class="text-xs py-2">7</div>
+            </div>
+            <div class="pt-3 border-t border-gray-100 dark:border-gray-700 space-y-1">
+                <p class="text-xs text-gray-500"><span class="inline-block w-1.5 h-1.5 bg-pri-500 rounded-full mr-1"></span> Dec 2: Mrs. Lam, 10:00 AM</p>
+                <p class="text-xs text-gray-500"><span class="inline-block w-1.5 h-1.5 bg-amber-500 rounded-full mr-1"></span> Dec 4: Mr. Chan, 2:00 PM</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block 4: Priority Jobs Preview -->
+    <div class="mx-5 mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-sm">Job Seeking / Priority Jobs</h3>
+            <button onclick="go('e-jobs')" class="text-xs text-pri-500 font-medium">View All →</button>
+        </div>
+        <div class="bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-2xl p-3">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-red-500 text-white font-bold">⚡ &lt;24H UNPAIRED</span>
+                <span class="text-xs font-medium text-red-600 dark:text-red-400">PINNED #1</span>
+            </div>
+            <p class="font-medium text-sm">Mrs. Ho — Emergency Visit</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Today, ASAP (in 4 hrs) • Prince of Wales Hospital</p>
+            <p class="text-xs text-orange-600 dark:text-orange-400">Lv 3 Wheelchair • $150/hr + Transport</p>
+        </div>
+    </div>
+</div>
+
+<!-- ESCORT JOBS (Weighted Priority Ranking) -->
+<div id="scr-e-jobs" class="scr min-h-screen pb-24">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2">
+        <h2 class="font-bold text-lg mb-1">Available Jobs</h2>
+        <p class="text-[10px] text-gray-500 mb-2">Priority-ranked by weighted matching score (1:1:1:1 — Location • Disability Lv • Wage • Urgency)</p>
+
+        <div class="relative mb-2">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" id="job-search" oninput="filterJobs()" placeholder="Search jobs..." class="w-full pl-9 pr-4 py-2 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none text-sm">
+        </div>
+        <div class="flex gap-2 overflow-x-auto pb-1">
+            <button onclick="setJobFilter('all')" class="job-filter-btn text-[10px] px-3 py-1.5 rounded-full whitespace-nowrap bg-pri-500 text-white font-medium" data-filter="all">All</button>
+            <button onclick="setJobFilter('onetime')" class="job-filter-btn text-[10px] px-3 py-1.5 rounded-full whitespace-nowrap bg-gray-100 dark:bg-sf-800 text-gray-600 dark:text-gray-300" data-filter="onetime">One-Time</button>
+            <button onclick="setJobFilter('regular')" class="job-filter-btn text-[10px] px-3 py-1.5 rounded-full whitespace-nowrap bg-gray-100 dark:bg-sf-800 text-gray-600 dark:text-gray-300" data-filter="regular">Regular</button>
+        </div>
+    </div>
+
+    <div id="e-jobs-list" class="px-5 pt-3 space-y-3 pb-4">
+        <!-- Populated by JS -->
+    </div>
+</div>
+
+<!-- ESCORT PROFILE -->
+<div id="scr-e-profile" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">My Profile</h2>
+    </div>
+    <div class="px-5 pt-4 space-y-4 pb-8">
+        <div class="bg-white dark:bg-sf-800 rounded-2xl p-5 text-center shadow-sm">
+            <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">🤝</div>
+            <h3 class="font-medium text-lg">Mary Chan</h3>
+            <p class="text-xs text-gray-500">mary.chan@email.com</p>
+            <span class="text-xs bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 px-3 py-1 rounded-full font-medium inline-block mt-2">E-1088</span>
+        </div>
+        <button onclick="doLogout()" class="w-full py-3.5 rounded-2xl border-2 border-red-200 dark:border-red-900 text-red-500 font-medium active:scale-95 transition-transform">Sign Out</button>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- ESCORT INFORMATION -->
+<div id="scr-e-info" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">Escort Information</h2>
+    </div>
+
+    <div class="px-5 pt-2 pb-8 space-y-4">
+        <!-- Escort Code Card -->
+        <div class="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-5 text-white text-center shadow-lg">
+            <p class="text-xs opacity-70 uppercase tracking-wider mb-1">Your Escort Code</p>
+            <p class="text-3xl font-bold tracking-wider font-mono" id="e-info-code">E-1088</p>
+            <p class="text-[10px] opacity-60 mt-1">Share this code when accepting jobs</p>
+        </div>
+
+        <!-- Escort Qualification Form -->
+        <form id="escort-info-form" onsubmit="saveEscortInfo(event)" class="space-y-4">
+            <!-- SECTION 1: PERSONAL DETAILS -->
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
+                <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200">
+                    <i class="fa-solid fa-user-shield text-purple-500 mr-1.5"></i>Section 1: Personal Details
+                </h3>
+
+                <div>
+                    <label class="text-xs font-medium text-gray-500 mb-1 block">Full Name (as shown on HKID)</label>
+                    <input type="text" name="fullName" id="e-info-fullname" value="Mary Chan" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-gray-500 mb-1 block">HK ID</label>
+                    <div class="w-full px-4 py-2.5 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-between">
+                        <input type="text" name="hkid" id="e-info-hkid" value="&bull; &bull; &bull; &bull; &bull; &bull; &bull; ( &bull; )" aria-label="HK ID" class="w-full bg-transparent font-mono tracking-widest text-sm text-gray-700 dark:text-gray-200 outline-none">
+                        <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2"><i class="fa-solid fa-lock mr-1"></i>Masked</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: PROFESSIONAL PROFILE -->
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
+                <h3 class="font-bold text-sm text-gray-700 dark:text-gray-200">
+                    <i class="fa-solid fa-id-card text-purple-500 mr-1.5"></i>Section 2: Professional Profile
+                </h3>
+
+                <!-- Select Mode -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 mb-1 block">Select Mode</label>
+                    <select name="escortMode" id="e-info-mode" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+                        <option value="qualified" selected>Qualified Escort</option>
+                        <option value="volunteer">Trained Student / NGO Volunteer</option>
+                        <option value="general">General Companion Escort</option>
+                    </select>
+                </div>
+
+                <!-- Medical Qualification + Uploaded File + Verify Button -->
+                <div class="space-y-2 pt-1 border-t border-gray-100 dark:border-gray-700">
+                    <label class="text-xs font-medium text-gray-500 block">Medical Qualification</label>
+                    <select name="medicalQualification" id="e-info-med-qual" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 text-sm">
+                        <option value="nchk" selected>Nursing License (RN / EN &mdash; Nursing Council of HK)</option>
+                        <option value="swd_hw">Registered Health Worker (SWD)</option>
+                        <option value="erb_cw">ERB Care Worker / Elderly Care Certificate</option>
+                        <option value="pca">PCA / Care Assistant Certificate</option>
+                        <option value="firstaid">First Aid &amp; CPR / AED (St. John / Red Cross / OSHC)</option>
+                        <option value="student">University Student Volunteer (Nursing / Social Work / Allied Health)</option>
+                    </select>
+
+                    <!-- Uploaded File + Verify Row -->
+                    <div class="flex items-center gap-2">
+                        <label class="flex-1 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl cursor-pointer overflow-hidden">
+                            <i class="fa-solid fa-file-pdf text-purple-600 dark:text-purple-300 text-sm flex-shrink-0"></i>
+                            <span id="qual-file-name" class="text-xs font-medium text-purple-700 dark:text-purple-200 truncate">NCHK_Practising_Cert_2025.pdf</span>
+                            <input type="file" accept=".pdf,image/*" class="hidden" onchange="handleQualFileUpload(event)">
+                        </label>
+                        <button type="button" onclick="verifyEscortCredential(&#39;qual&#39;)" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-xl active:scale-95 transition-transform flex-shrink-0">
+                            Verify
+                        </button>
+                    </div>
+                    <p id="qual-verify-status" class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check"></i> Verified by CareConnect on 12 Nov 2025
+                    </p>
+                </div>
+
+                <!-- Criminal / Sexual Conviction Record Check + Verify Button -->
+                <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <label class="text-xs font-medium text-gray-500 block">Criminal / Sexual Conviction Record Check (SCRC)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" name="criminalCheckCode" id="e-info-scrc-code" value="SCRC-2025-88412" placeholder="Enter SCRC / Declaration Code" class="flex-1 px-3.5 py-2 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 text-xs font-mono">
+                        <button type="button" onclick="verifyEscortCredential(&#39;scrc&#39;)" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-xl active:scale-95 transition-transform flex-shrink-0">
+                            Verify
+                        </button>
+                    </div>
+                    <p id="scrc-verify-status" class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check"></i> Verified by CareConnect on 12 Nov 2025
+                    </p>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Experience Level</label>
+                <select name="experience" id="e-info-experience" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="">Select your experience level</option>
+                    <option value="none">None / Just starting</option>
+                    <option value="some">Some experience (1-2 years)</option>
+                    <option value="experienced" selected="">Experienced (3-5 years)</option>
+                    <option value="professional">Healthcare professional (5+ years)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Languages</label>
+                <div class="flex flex-wrap gap-3">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="languages" value="cantonese" checked="" class="w-5 h-5 rounded accent-purple-500">
+                        <span class="text-sm">Cantonese</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="languages" value="mandarin" class="w-5 h-5 rounded accent-purple-500">
+                        <span class="text-sm">Mandarin</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="languages" value="english" checked="" class="w-5 h-5 rounded accent-purple-500">
+                        <span class="text-sm">English</span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Patient Disability Levels You Can Handle</label>
+                <p class="text-[10px] text-gray-400 mb-2">Select all levels you're qualified to assist with</p>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 p-3 bg-white dark:bg-sf-800 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-purple-300">
+                        <input type="checkbox" name="patientLevels" value="1" checked="" class="w-5 h-5 rounded accent-purple-500">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">Level 1 — Independent</p>
+                            <p class="text-[10px] text-gray-500">Patient can walk independently, minimal assistance needed</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 bg-white dark:bg-sf-800 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-purple-300">
+                        <input type="checkbox" name="patientLevels" value="2" checked="" class="w-5 h-5 rounded accent-purple-500">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">Level 2 — Cane / Walking aids</p>
+                            <p class="text-[10px] text-gray-500">Patient uses cane, walker, or other walking aids</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 bg-white dark:bg-sf-800 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-purple-300">
+                        <input type="checkbox" name="patientLevels" value="3" checked="" class="w-5 h-5 rounded accent-purple-500">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">Level 3 — Simple wheelchair</p>
+                            <p class="text-[10px] text-gray-500">Patient uses standard wheelchair, no medical equipment</p>
+                        </div>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 bg-white dark:bg-sf-800 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-purple-300">
+                        <input type="checkbox" name="patientLevels" value="4" class="w-5 h-5 rounded accent-purple-500">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium">Level 4 — Wheelchair with vital equipment</p>
+                            <p class="text-[10px] text-gray-500">Patient requires oxygen, monitors, or other medical devices</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Medical Specialties / Conditions Experience</label>
+                <p class="text-[10px] text-gray-400 mb-2">Optional: Areas where you have specific experience</p>
+                <div class="flex flex-wrap gap-2">
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="specialties" value="cardiology" checked="" class="w-4 h-4 rounded accent-purple-500">
+                        <span>Cardiology</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="specialties" value="orthopedics" class="w-4 h-4 rounded accent-purple-500">
+                        <span>Orthopedics</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="specialties" value="dialysis" class="w-4 h-4 rounded accent-purple-500">
+                        <span>Dialysis</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="specialties" value="oncology" class="w-4 h-4 rounded accent-purple-500">
+                        <span>Oncology</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="specialties" value="geriatric" class="w-4 h-4 rounded accent-purple-500">
+                        <span>Geriatric Care</span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Certifications</label>
+                <p class="text-[10px] text-gray-400 mb-2">Professional certifications you hold</p>
+                <div class="flex flex-wrap gap-2">
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="certifications" value="firstaid" checked="" class="w-4 h-4 rounded accent-purple-500">
+                        <span>First Aid</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="certifications" value="cpr" checked="" class="w-4 h-4 rounded accent-purple-500">
+                        <span>CPR</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="certifications" value="pce" class="w-4 h-4 rounded accent-purple-500">
+                        <span>PCE</span>
+                    </label>
+                    <label class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-sf-800 rounded-full border border-gray-200 dark:border-gray-700 cursor-pointer text-sm hover:border-purple-300">
+                        <input type="checkbox" name="certifications" value="nursing" class="w-4 h-4 rounded accent-purple-500">
+                        <span>Nursing License</span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-gray-500 mb-1 block">Additional Notes</label>
+                <textarea name="notes" id="e-info-notes" rows="2" placeholder="Any additional information about your experience or availability..." class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 text-sm"></textarea>
+            </div>
+
+            <button type="submit" id="escort-info-save-btn" data-filled="false" class="w-full bg-purple-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform">
+                <i class="fa-solid fa-check mr-1"></i>Save Escort Information
+            </button>
+        </form>
+    </div>
+</div>
+<!-- ==================== GUARDIAN SCREENS ====================== -->
+<!-- ============================================================ -->
+
+<!-- GUARDIAN HOME -->
+<div id="scr-g-home" class="scr min-h-screen pb-24">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center justify-between">
+        <h1 class="font-display text-xl text-emerald-600 dark:text-emerald-300">Guardian Portal</h1>
+        <div class="flex items-center gap-2">
+            <span class="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 px-2 py-1 rounded-full font-medium">G-5512</span>
+            <button onclick="go('g-profile')" class="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center"><i class="fa-solid fa-user text-emerald-600 dark:text-emerald-300 text-sm"></i></button>
+        </div>
+    </div>
+
+    <!-- Block 1: Guardian Profile with Multi-Patient Switcher -->
+    <div class="px-5 pt-2 pb-4">
+        <div class="w-full bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-900 rounded-xl flex items-center justify-center text-2xl">👨‍👩‍👧</div>
+                <div class="flex-1">
+                    <h2 class="font-medium text-base">David Chan</h2>
+                    <p class="text-xs text-gray-500">G-5512 (Guardian)</p>
+                </div>
+            </div>
+
+            <!-- Multi-Patient Switcher -->
+            <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3">
+                <p class="text-[10px] text-emerald-600 dark:text-emerald-400 mb-2 font-medium">Managing Patients:</p>
+                <div class="space-y-2">
+                    <button onclick="switchPatient('P-0384')" id="g-patient-btn-0384" class="w-full flex items-center gap-2 p-2 rounded-lg bg-emerald-100 dark:bg-emerald-800 border-2 border-emerald-500">
+                        <i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-300"></i>
+                        <div class="text-left flex-1">
+                            <p class="text-xs font-medium text-emerald-700 dark:text-emerald-300">Mrs. Chan (P-0384, Lv 2)</p>
+                            <p class="text-[10px] text-emerald-600 dark:text-emerald-400">Currently viewing</p>
+                        </div>
+                    </button>
+                    <button onclick="switchPatient('P-2244')" id="g-patient-btn-2244" class="w-full flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-sf-700 border-2 border-gray-200 dark:border-gray-600">
+                        <i class="fa-regular fa-circle text-gray-400"></i>
+                        <div class="text-left flex-1">
+                            <p class="text-xs font-medium">Mr. Chan (P-2244, Lv 3)</p>
+                            <p class="text-[10px] text-gray-500">Tap to switch</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7-Day Unmatched Alert -->
+    <div class="mx-5 mb-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl p-4">
+        <div class="flex items-center gap-3 mb-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-xl"></i>
+            <div>
+                <p class="font-medium text-sm text-amber-700 dark:text-amber-300">Escort Needed Within 7 Days!</p>
+                <p class="text-xs text-amber-600 dark:text-amber-400" id="g-alert-patient">Mrs. Chan's appointment has no escort</p>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-sf-800 rounded-xl p-3 mb-2">
+            <p class="text-sm font-medium">Cardiology — Queen Mary Hospital</p>
+            <p class="text-xs text-gray-500">Tomorrow, 10:00 AM</p>
+            <p class="text-xs text-red-500 font-medium mt-1">⚠️ No escort matched yet</p>
+        </div>
+        <button onclick="increaseWageGuardian()" class="w-full bg-amber-500 text-white py-2.5 rounded-xl text-sm font-medium active:scale-95 transition-transform">
+            <i class="fa-solid fa-dollar-sign mr-1"></i> Increase Hourly Wage (+$20/hr)
+        </button>
+    </div>
+
+    <!-- Block 2: Active Appointment -->
+    <div class="mx-5 mb-4">
+        <h3 class="font-bold text-sm mb-2">Active Appointment (Today)</h3>
+        <button onclick="go('active-appt')" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl p-4 flex items-center gap-3 active:scale-[.98] transition-transform shadow-lg">
+            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center" style="animation:pulse2 2s infinite"><i class="fa-solid fa-location-dot"></i></div>
+            <div class="flex-1 text-left">
+                <p class="font-medium text-sm" id="g-active-patient">Active Session for Mrs. Chan</p>
+                <p class="text-xs opacity-80">Mary Chan • Queen Mary Hospital</p>
+            </div>
+            <i class="fa-solid fa-chevron-right text-sm opacity-60"></i>
+        </button>
+    </div>
+
+    <!-- Block 3: Requests & Records -->
+    <div class="mx-5 mb-4">
+        <h3 class="font-bold text-sm mb-2">Upcoming Requests &amp; Records</h3>
+        <div class="space-y-2" id="g-requests-list">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="font-medium text-sm">Cardiology Follow-up</p>
+                    <span class="text-[10px] savail px-2 py-0.5 rounded-full">Confirmed</span>
+                </div>
+                <p class="text-xs text-gray-500">Tomorrow, 10:00 AM • Mary Chan</p>
+                <p class="text-xs text-gray-500">Queen Mary Hospital</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block 4: HA Go + Book CTA -->
+    <div class="mx-5 mb-4">
+        <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-sm" id="g-hago-title">HA Go (Mrs. Chan)</h3>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300"><i class="fa-solid fa-link text-[8px] mr-1"></i>Synced</span>
+        </div>
+        <div class="space-y-2 mb-3">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm dlv2">
+                <p class="font-medium text-sm">Cardiology Follow-up</p>
+                <p class="text-xs text-gray-500 mt-1"><i class="fa-regular fa-calendar mr-1"></i>Tomorrow, 10:00 AM</p>
+                <p class="text-xs text-gray-500"><i class="fa-solid fa-hospital mr-1"></i>Queen Mary Hospital</p>
+                <button onclick="go('g-book')" class="mt-2 text-xs text-emerald-500 font-medium"><i class="fa-solid fa-plus mr-1"></i>Book Escort for This</button>
+            </div>
+        </div>
+        <button onclick="go('g-book')" class="w-full bg-emerald-500 text-white py-3 rounded-xl font-medium active:scale-95 transition-transform">
+            <i class="fa-solid fa-calendar-plus mr-1"></i> Launch a Request / Book Escort
+        </button>
+    </div>
+</div>
+
+<!-- GUARDIAN BOOK -->
+<div id="scr-g-book" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">Book Escort for Patient</h2>
+    </div>
+    <div class="px-5 pt-2 pb-8">
+        <p class="text-sm mb-4">Booking for: <strong id="g-booking-for">Mrs. Chan (P-0384)</strong></p>
+        <form id="g-book-form" onsubmit="submitGuardianBooking(event)" class="space-y-4">
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Appointment Date</label>
+                <input type="date" name="date" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Appointment Time</label>
+                <input type="time" name="time" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Hospital / Clinic</label>
+                <select name="hospital" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+                    <option>Queen Mary Hospital</option>
+                    <option>Prince of Wales Hospital</option>
+                </select>
+            </div>
+            <div><label class="text-xs font-medium text-gray-500 mb-1 block">Hourly Wage (HKD)</label>
+                <input type="number" name="hourlyWage" min="50" max="300" step="10" placeholder="e.g. 100" class="w-full px-4 py-3 bg-white dark:bg-sf-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none">
+            </div>
+            <button type="submit" id="g-book-submit-btn" data-filled="false" class="w-full bg-emerald-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform">Submit Booking Request</button>
+        </form>
+    </div>
+</div>
+
+<!-- GUARDIAN PROFILE -->
+<div id="scr-g-profile" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">My Profile</h2>
+    </div>
+    <div class="px-5 pt-4 space-y-4 pb-8">
+        <div class="bg-white dark:bg-sf-800 rounded-2xl p-5 text-center shadow-sm">
+            <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👨‍👩‍👧</div>
+            <h3 class="font-medium text-lg">David Chan</h3>
+            <p class="text-xs text-gray-500">david.chan@email.com</p>
+            <span class="text-xs bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-300 px-3 py-1 rounded-full font-medium inline-block mt-2">G-5512</span>
+        </div>
+        <button onclick="doLogout()" class="w-full py-3.5 rounded-2xl border-2 border-red-200 dark:border-red-900 text-red-500 font-medium active:scale-95 transition-transform">Sign Out</button>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- ==================== ACTIVE APPOINTMENT ==================== -->
+<!-- ============================================================ -->
+<div id="scr-active-appt" class="scr min-h-screen pb-10">
+    <div class="sticky top-0 z-30 bg-sf-50/80 dark:bg-sf-950/80 backdrop-blur-xl px-5 pt-3 pb-2 flex items-center gap-3">
+        <button onclick="goBack()" class="w-9 h-9 rounded-full bg-gray-100 dark:bg-sf-800 flex items-center justify-center"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+        <h2 class="font-bold text-lg">Active Appointment</h2>
+        <span class="ml-auto text-[10px] bg-pri-100 dark:bg-pri-900 text-pri-600 dark:text-pri-300 px-2 py-1 rounded-full font-mono" id="aa-stage-badge">Stage 1/5</span>
+    </div>
+
+    <!-- ========== PATIENT VIEW (3 Blocks) ========== -->
+    <div id="aa-patient-view" class="hidden">
+        <!-- Block 1: Show Code to Escort -->
+        <div class="mx-5 mt-3">
+            <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg text-center">
+                <p class="text-xs opacity-70 uppercase tracking-wider mb-1">Your Verification Code</p>
+                <p class="text-sm opacity-80 mb-4">Show this code to your escort in person upon pickup:</p>
+                <div class="flex justify-center gap-3 mb-4">
+                    <div class="w-14 h-14 text-center text-3xl font-bold rounded-xl bg-white/20 border-2 border-white flex items-center justify-center">0</div>
+                    <div class="w-14 h-14 text-center text-3xl font-bold rounded-xl bg-white/20 border-2 border-white flex items-center justify-center">3</div>
+                    <div class="w-14 h-14 text-center text-3xl font-bold rounded-xl bg-white/20 border-2 border-white flex items-center justify-center">8</div>
+                    <div class="w-14 h-14 text-center text-3xl font-bold rounded-xl bg-white/20 border-2 border-white flex items-center justify-center">4</div>
+                </div>
+                <p class="text-xs opacity-60">Patient Code: P-0384</p>
+            </div>
+        </div>
+
+        <!-- Block 2: Confirm Pickup -->
+        <div class="mx-5 mt-4">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-emerald-200 dark:border-emerald-800">
+                <div class="flex items-center gap-3 mb-2">
+                    <i class="fa-solid fa-check-circle text-emerald-500 text-xl"></i>
+                    <h4 class="font-medium text-sm">Confirm Escort Pickup</h4>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Click when your escort has arrived and verified your code.</p>
+                <button onclick="confirmPatientPickup()" id="patient-confirm-pickup" class="w-full bg-emerald-500 text-white py-3 rounded-xl font-medium active:scale-95 transition-transform">
+                    <i class="fa-solid fa-hand-holding-medical mr-1"></i> Confirm Escort Has Picked Me Up
+                </button>
+                <div id="patient-pickup-confirmed" class="hidden mt-2 text-center">
+                    <p class="text-xs text-emerald-500"><i class="fa-solid fa-check-circle mr-1"></i>Pickup confirmed!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Block 3: Confirm Appointment End -->
+        <div class="mx-5 mt-4">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-purple-200 dark:border-purple-800">
+                <div class="flex items-center gap-3 mb-2">
+                    <i class="fa-solid fa-flag-checkered text-purple-500 text-xl"></i>
+                    <h4 class="font-medium text-sm">Confirm Appointment Completion</h4>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Click when the appointment is complete and you're back home/settled.</p>
+                <button onclick="confirmPatientEnd()" id="patient-confirm-end" class="w-full bg-purple-500 text-white py-3 rounded-xl font-medium active:scale-95 transition-transform">
+                    <i class="fa-solid fa-house-circle-check mr-1"></i> Confirm Appointment Has Ended
+                </button>
+                <div id="patient-end-confirmed" class="hidden mt-2 text-center">
+                    <p class="text-xs text-purple-500"><i class="fa-solid fa-check-circle mr-1"></i>Appointment ended!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== GUARDIAN VIEW (3 Blocks + Report) ========== -->
+    <!-- ========== GUARDIAN VIEW (Progress Tracker + Report Only) ========== -->
+    <div id="aa-guardian-view" class="hidden">
+        <div class="mx-5 mt-3">
+            <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg text-center">
+                <i class="fa-solid fa-clipboard-check text-4xl mb-3 opacity-80"></i>
+                <h3 class="font-medium text-base mb-1">Tracking Active Appointment</h3>
+                <p class="text-xs opacity-70">Monitoring escort session for Mrs. Chan (P-0384)</p>
+                <p class="text-[10px] opacity-60 mt-2">Mary Chan (E-1088) • Queen Mary Hospital</p>
+            </div>
+        </div>
+
+        <!-- Guardian Progress Tracker with Durations -->
+        <div class="mx-5 mt-4 bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm">
+            <h4 class="font-medium text-xs text-gray-400 mb-3 uppercase tracking-wider">Progress Tracker</h4>
+            <div id="g-progress-tracker">
+                <!-- Stage 1 -->
+                <div class="flex items-center gap-3" id="g-pr-1">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500"><i class="fa-solid fa-check text-white text-[10px]"></i></div>
+                    <div><p class="text-sm font-medium">Pickup Verification</p><p class="text-[10px] text-gray-500">Complete</p></div>
+                </div>
+                <!-- Duration 1→2 -->
+                <div class="flex items-center gap-3 ml-3 my-1">
+                    <div class="w-0.5 h-6 bg-gray-200 dark:bg-gray-700 ml-[13px]"></div>
+                    <p class="text-[10px] font-mono text-gray-400 bg-gray-50 dark:bg-sf-900 px-2 py-0.5 rounded">45m 59s</p>
+                </div>
+                <!-- Stage 2 -->
+                <div class="flex items-center gap-3" id="g-pr-2">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500"><i class="fa-solid fa-check text-white text-[10px]"></i></div>
+                    <div><p class="text-sm font-medium">Hospital Arrival</p><p class="text-[10px] text-gray-500">Complete</p></div>
+                </div>
+                <!-- Duration 2→3 -->
+                <div class="flex items-center gap-3 ml-3 my-1">
+                    <div class="w-0.5 h-auto bg-gray-200 dark:bg-gray-700 ml-[13px] self-stretch"></div>
+                    <div class="text-[10px] font-mono text-gray-400 bg-gray-50 dark:bg-sf-900 px-2 py-1 rounded">
+                        <p class="font-medium text-gray-500 dark:text-gray-400">1hr 34m 36s</p>
+                        <p class="text-[9px] text-gray-400 mt-0.5">Before appt 34m51s → Appointment 21m48s → Medicine 37m57s</p>
+                    </div>
+                </div>
+                <!-- Stage 3 -->
+                <div class="flex items-center gap-3" id="g-pr-3">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500"><i class="fa-solid fa-check text-white text-[10px]"></i></div>
+                    <div><p class="text-sm font-medium">Leaving Hospital</p><p class="text-[10px] text-gray-500">Complete</p></div>
+                </div>
+                <!-- Duration 3→4 -->
+                <div class="flex items-center gap-3 ml-3 my-1">
+                    <div class="w-0.5 h-6 bg-gray-200 dark:bg-gray-700 ml-[13px]"></div>
+                    <p class="text-[10px] font-mono text-gray-400 bg-gray-50 dark:bg-sf-900 px-2 py-0.5 rounded">48m 01s</p>
+                </div>
+                <!-- Stage 4 -->
+                <div class="flex items-center gap-3" id="g-pr-4">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500"><i class="fa-solid fa-check text-white text-[10px]"></i></div>
+                    <div><p class="text-sm font-medium">Patient Settled</p><p class="text-[10px] text-gray-500">Complete</p></div>
+                </div>
+                <!-- No duration before stage 5 -->
+                <div class="flex items-center gap-3 ml-3 my-1">
+                    <div class="w-0.5 h-4 bg-gray-200 dark:bg-gray-700 ml-[13px]"></div>
+                </div>
+                <!-- Stage 5 -->
+                <div class="flex items-center gap-3" id="g-pr-5">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500"><i class="fa-solid fa-check text-white text-[10px]"></i></div>
+                    <div><p class="text-sm font-medium">Summary Log</p><p class="text-[10px] text-gray-500">Complete</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Escort Summary Report -->
+        <div class="mx-5 mt-4" id="guardian-report-section">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-pri-200 dark:border-pri-800">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-file-medical text-pri-500 text-lg"></i>
+                    <h4 class="font-medium text-base">Escort Summary Report</h4>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-pri-50 dark:bg-pri-900/20 rounded-lg p-3">
+                        <p class="text-xs font-bold text-pri-600 dark:text-pri-300 mb-1">1. What was done during the appointment?</p>
+                        <p class="text-xs text-gray-700 dark:text-gray-300" id="report-done">Cardiology consultation completed. ECG and blood pressure checked.</p>
+                    </div>
+                    <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+                        <p class="text-xs font-bold text-amber-600 dark:text-amber-300 mb-1">2. Important notes from doctor/nurse</p>
+                        <p class="text-xs text-gray-700 dark:text-gray-300" id="report-notes">Doctor advised to continue current medication. Monitor blood pressure daily.</p>
+                    </div>
+                    <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
+                        <p class="text-xs font-bold text-emerald-600 dark:text-emerald-300 mb-1">3. Future to-dos</p>
+                        <p class="text-xs text-gray-700 dark:text-gray-300" id="report-actions">Follow-up appointment in 3 months. Take medication twice daily with meals.</p>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-[10px] text-gray-400">
+                        <i class="fa-solid fa-user-nurse mr-1"></i>Submitted by: Mary Chan (E-1088)
+                        <span class="mx-2">•</span>
+                        <i class="fa-regular fa-clock mr-1"></i>Completed: Dec 1, 2024 2:30 PM
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overtime Report (Guardian View) -->
+        <div class="mx-5 mt-4 mb-6" id="guardian-overtime-section">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-red-200 dark:border-red-800">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-clock-rotate-left text-red-500 text-lg"></i>
+                    <h4 class="font-medium text-base">Overtime Report</h4>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 font-bold ml-auto">- 00:08:37</span>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                        <p class="text-xs font-bold text-red-600 dark:text-red-300 mb-1">Appointment ended at:</p>
+                        <p class="text-xs text-gray-700 dark:text-gray-300" id="g-report-appt-end">2:05 PM</p>
+                    </div>
+                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                        <p class="text-xs font-bold text-red-600 dark:text-red-300 mb-1">Time to pick up medicine:</p>
+                        <p class="text-xs text-gray-700 dark:text-gray-300" id="g-report-medicine-time">37 minutes</p>
+                    </div>
+                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                        <p class="text-xs font-bold text-red-600 dark:text-red-300 mb-1">Reason of overtime:</p>
+                        <p class="text-xs text-gray-700 dark:text-gray-300" id="g-report-ot-reason">Waiting for medicine took longer than expected. Pharmacy was busy with multiple prescriptions ahead.</p>
+                    </div>
+                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                        <p class="text-xs font-bold text-red-600 dark:text-red-300 mb-1">Proof attached:</p>
+                        <p class="text-xs text-gray-700 dark:text-gray-300"><i class="fa-solid fa-image mr-1"></i>overtime_proof.jpg</p>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-[10px] text-gray-400">
+                        <i class="fa-solid fa-user-nurse mr-1"></i>Filed by: Mary Chan (E-1088)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="aa-escort-view" class="hidden">
+        <!-- STAGE 1: Code Verification -->
+        <div id="aa-stage-1-escort" class="mx-5 mt-3">
+            <div class="bg-gradient-to-br from-pri-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+                <p class="text-xs opacity-70 uppercase tracking-wider mb-1 text-center">Stage 1 — Pickup Verification</p>
+                <p class="text-[10px] opacity-60 text-center mb-4">Enter the 4-digit code shown by the patient</p>
+                <div class="flex items-center justify-center gap-2 mb-4">
+                    <span class="text-2xl font-bold tracking-wider">P -</span>
+                    <input type="text" maxlength="1" class="aa-code-digit w-12 h-14 text-center text-2xl font-bold rounded-xl bg-white/20 border-2 border-white/40 text-white placeholder-white/40 outline-none focus:border-white focus:bg-white/30" placeholder="·">
+                    <input type="text" maxlength="1" class="aa-code-digit w-12 h-14 text-center text-2xl font-bold rounded-xl bg-white/20 border-2 border-white/40 text-white placeholder-white/40 outline-none focus:border-white focus:bg-white/30" placeholder="·">
+                    <input type="text" maxlength="1" class="aa-code-digit w-12 h-14 text-center text-2xl font-bold rounded-xl bg-white/20 border-2 border-white/40 text-white placeholder-white/40 outline-none focus:border-white focus:bg-white/30" placeholder="·">
+                    <input type="text" maxlength="1" class="aa-code-digit w-12 h-14 text-center text-2xl font-bold rounded-xl bg-white/20 border-2 border-white/40 text-white placeholder-white/40 outline-none focus:border-white focus:bg-white/30" placeholder="·">
+                </div>
+                <div id="aa-code-error" class="hidden text-center mb-3">
+                    <p class="text-xs text-red-200 bg-red-500/30 rounded-lg py-1.5 px-3 inline-block"><i class="fa-solid fa-xmark mr-1"></i>Code does not match. Try again.</p>
+                </div>
+                <button onclick="verifyPickupCode()" id="aa-verify-btn" data-filled="false" class="w-full bg-white text-pri-600 py-3 rounded-xl font-medium active:scale-95 transition-transform text-sm">Verify Code</button>
+                <div id="aa-code-success" class="hidden text-center mt-3">
+                    <p class="text-xs text-emerald-200"><i class="fa-solid fa-check-circle mr-1"></i>Verified! Pickup confirmed.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STAGE 2: Hospital Arrival Photo -->
+        <div id="aa-stage-2-escort" class="mx-5 mt-3 hidden">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-blue-200 dark:border-blue-800">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-7 h-7 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center"><i class="fa-solid fa-hospital text-blue-500 text-[10px]"></i></div>
+                    <h4 class="font-medium text-sm">Stage 2 — Hospital Arrival</h4>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Upload a watermarked photo proving arrival at the hospital.</p>
+
+                <!-- Countdown Timer Block -->
+                <div id="s2-countdown-block" class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 mb-3 text-center">
+                    <p class="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wider font-medium mb-1">Time Remaining</p>
+                    <p class="text-2xl font-bold font-mono text-blue-700 dark:text-blue-300" id="s2-countdown">03:00:00</p>
+                    <p class="text-[10px] text-blue-500 dark:text-blue-400 mt-1">3-hour session budget</p>
+                </div>
+
+                <label id="s2-upload-btn" class="block w-full bg-blue-500 text-white py-3 rounded-xl text-sm font-medium text-center cursor-pointer active:scale-95 transition-transform">
+                    <i class="fa-solid fa-camera mr-1"></i> Take Arrival Photo
+                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleStagePhoto(event, 2)">
+                </label>
+                <div id="s2-done" class="hidden mt-2">
+                    <p class="text-xs text-emerald-500 font-medium text-center mb-2"><i class="fa-solid fa-check-circle mr-1"></i>Arrival photo uploaded</p>
+                    <button onclick="confirmStage(2)" class="w-full bg-emerald-500 text-white py-3 rounded-xl text-sm font-medium active:scale-95 transition-transform">Confirm Hospital Arrival</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STAGE 3: Leaving Hospital -->
+        <div id="aa-stage-3-escort" class="mx-5 mt-3 hidden">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-amber-200 dark:border-amber-800">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-7 h-7 bg-amber-100 dark:bg-amber-900 rounded-full flex items-center justify-center"><i class="fa-solid fa-door-open text-amber-500 text-[10px]"></i></div>
+                    <h4 class="font-medium text-sm">Stage 3 — Leaving Hospital</h4>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Record appointment timestamps and upload a photo before leaving the hospital.</p>
+
+                <!-- Countdown Timer Block -->
+                <div id="s3-countdown-block" class="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 mb-3 text-center">
+                    <p class="text-[10px] text-amber-600 dark:text-amber-400 uppercase tracking-wider font-medium mb-1">Time Remaining</p>
+                    <p class="text-2xl font-bold font-mono text-amber-700 dark:text-amber-300" id="s3-countdown">02:14:01</p>
+                    <p class="text-[10px] text-amber-500 dark:text-amber-400 mt-1">3-hour session budget</p>
+                </div>
+
+                <!-- Appointment Timestamp Buttons -->
+                <div class="space-y-2 mb-3">
+                    <button onclick="recordTimestamp('appt-start')" id="btn-appt-start" class="w-full bg-indigo-500 text-white py-3 rounded-xl text-sm font-medium active:scale-95 transition-transform flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-play-circle"></i> Record: Appointment Started
+                    </button>
+                    <div id="appt-start-recorded" class="hidden text-center">
+                        <p class="text-xs text-indigo-500 font-medium"><i class="fa-solid fa-check-circle mr-1"></i>Appointment started at <span id="appt-start-time"></span></p>
+                    </div>
+
+                    <button onclick="recordTimestamp('appt-end')" id="btn-appt-end" class="w-full bg-orange-500 text-white py-3 rounded-xl text-sm font-medium active:scale-95 transition-transform flex items-center justify-center gap-2 opacity-50" disabled="">
+                        <i class="fa-solid fa-stop-circle"></i> Record: Appointment Ended
+                    </button>
+                    <div id="appt-end-recorded" class="hidden text-center">
+                        <p class="text-xs text-orange-500 font-medium"><i class="fa-solid fa-check-circle mr-1"></i>Appointment ended at <span id="appt-end-time"></span></p>
+                    </div>
+                </div>
+
+                <label id="s3-upload-btn" class="block w-full bg-amber-500 text-white py-3 rounded-xl text-sm font-medium text-center cursor-pointer active:scale-95 transition-transform">
+                    <i class="fa-solid fa-camera mr-1"></i> Take Leaving Hospital Photo
+                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleStagePhoto(event, 3)">
+                </label>
+                <div id="s3-done" class="hidden mt-2">
+                    <p class="text-xs text-emerald-500 font-medium text-center mb-2"><i class="fa-solid fa-check-circle mr-1"></i>Leaving hospital photo uploaded</p>
+                    <button onclick="confirmStage(3)" class="w-full bg-emerald-500 text-white py-3 rounded-xl text-sm font-medium active:scale-95 transition-transform">Confirm Leaving Hospital</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STAGE 4: Patient Settled Photo -->
+        <div id="aa-stage-4-escort" class="mx-5 mt-3 hidden">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-emerald-200 dark:border-emerald-800">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-7 h-7 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center"><i class="fa-solid fa-house-chimney text-emerald-500 text-[10px]"></i></div>
+                    <h4 class="font-medium text-sm">Stage 4 — Patient Settled</h4>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Upload a watermarked photo proving patient has safely arrived home.</p>
+
+                <!-- Countdown Timer Block -->
+                <div id="s4-countdown-block" class="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-3 mb-3 text-center">
+                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-medium mb-1">Time Remaining</p>
+                    <p class="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-300" id="s4-countdown">00:39:38</p>
+                    <p class="text-[10px] text-emerald-500 dark:text-emerald-400 mt-1">3-hour session budget</p>
+                </div>
+
+                <label id="s4-upload-btn" class="block w-full bg-emerald-500 text-white py-3 rounded-xl text-sm font-medium text-center cursor-pointer active:scale-95 transition-transform">
+                    <i class="fa-solid fa-camera mr-1"></i> Take Drop-off Photo
+                    <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleStagePhoto(event, 4)">
+                </label>
+                <div id="s4-done" class="hidden mt-2">
+                    <p class="text-xs text-emerald-500 font-medium text-center mb-2"><i class="fa-solid fa-check-circle mr-1"></i>Drop-off photo uploaded</p>
+                    <button onclick="confirmStage(4)" class="w-full bg-emerald-500 text-white py-3 rounded-xl text-sm font-medium active:scale-95 transition-transform">Confirm Patient Settled Safely</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="aa-stage-5-escort" class="mx-5 mt-3 hidden">
+            <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-purple-200 dark:border-purple-800">
+                <div class="flex items-center gap-2 mb-1">
+                    <div class="w-7 h-7 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center"><i class="fa-solid fa-clipboard-list text-purple-500 text-[10px]"></i></div>
+                    <h4 class="font-medium text-sm">Stage 5 — Summary Log</h4>
+                </div>
+
+                <!-- Overtime Display Block -->
+                <div id="s5-overtime-block" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-3 text-center">
+                    <p class="text-[10px] text-red-600 dark:text-red-400 uppercase tracking-wider font-medium mb-1">⚠️ Session Overtime</p>
+                    <p class="text-2xl font-bold font-mono text-red-600 dark:text-red-400" id="s5-overtime">- 00:08:37</p>
+                    <p class="text-[10px] text-red-500 dark:text-red-400 mt-1">Exceeded 3-hour session budget</p>
+                </div>
+
+                <p class="text-[10px] text-gray-400 mb-4">This summary will be shared with the patient/guardian for review.</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-gray-600 dark:text-gray-300 mb-1 block"><span class="text-pri-500 mr-1">1.</span>What was done during the hospital appointment?</label>
+                        <textarea id="sum-done" rows="3" placeholder="Describe the procedures, tests, or consultations that took place..." class="w-full px-4 py-3 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500 text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-600 dark:text-gray-300 mb-1 block"><span class="text-amber-500 mr-1">2.</span>Important notes from doctor / nurse</label>
+                        <p class="text-[10px] text-gray-400 mb-1">What the patient should be aware of, or what the guardian must be notified about.</p>
+                        <textarea id="sum-notes" rows="3" placeholder="e.g. New medication prescribed, diet restrictions, warning signs to watch for..." class="w-full px-4 py-3 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500 text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-600 dark:text-gray-300 mb-1 block"><span class="text-emerald-500 mr-1">3.</span>Call to Action — Future to-dos</label>
+                        <p class="text-[10px] text-gray-400 mb-1">Follow-up appointments, medication schedules, exercises, etc.</p>
+                        <textarea id="sum-actions" rows="3" placeholder="e.g. Next appointment on Jan 15, take medication twice daily, blood test in 2 weeks..." class="w-full px-4 py-3 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-pri-500 text-sm"></textarea>
+                    </div>
+                </div>
+
+                <button onclick="submitSummaryLog()" id="aa-submit-log-btn" data-filled="false" class="w-full bg-pri-500 text-white py-3.5 rounded-xl text-sm font-medium mt-4 active:scale-95 transition-transform">Submit Summary Log</button>
+                <div id="aa-log-done" class="hidden mt-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 text-center">
+                    <i class="fa-solid fa-check-circle text-2xl text-emerald-500 mb-2"></i>
+                    <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Summary submitted!</p>
+                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400">Patient/Guardian will be notified for review.</p>
+                </div>
+            </div>
+
+            <!-- Overtime Detail Section -->
+            <div id="aa-overtime-detail" class="mt-4 hidden">
+                <div class="bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm border-2 border-red-200 dark:border-red-800">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-7 h-7 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left text-red-500 text-[10px]"></i></div>
+                        <h4 class="font-medium text-sm">Overtime Report</h4>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-600 dark:text-gray-300 mb-1 block">What time did the appointment end?</label>
+                            <input type="text" id="ot-appt-end-time" readonly="" class="w-full px-4 py-3 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none text-sm text-gray-700 dark:text-gray-300">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-600 dark:text-gray-300 mb-1 block">How long does it take to pick up medicine (if have)?</label>
+                            <input type="text" id="ot-medicine-time" placeholder="e.g. 30 minutes" class="w-full px-4 py-3 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-600 dark:text-gray-300 mb-1 block">Reason of Overtime</label>
+                            <p class="text-[10px] text-gray-400 mb-1">e.g. Transportation? Waiting for medicine? Others — please specify</p>
+                            <textarea id="ot-reason" rows="3" placeholder="Please specify the reason for going over the 3-hour session budget..." class="w-full px-4 py-3 bg-gray-50 dark:bg-sf-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-red-500 text-sm"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-600 dark:text-gray-300 mb-1 block">Upload — Proof of Reason of Overtime</label>
+                            <label id="ot-upload-btn" class="block w-full bg-red-500 text-white py-3 rounded-xl text-sm font-medium text-center cursor-pointer active:scale-95 transition-transform">
+                                <i class="fa-solid fa-camera mr-1"></i> Upload Proof
+                                <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleOvertimePhoto(event)">
+                            </label>
+                            <div id="ot-photo-done" class="hidden mt-2 text-center">
+                                <p class="text-xs text-emerald-500 font-medium"><i class="fa-solid fa-check-circle mr-1"></i>Overtime proof uploaded</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="submitOvertimeReport()" id="ot-submit-btn" data-filled="false" class="w-full bg-red-500 text-white py-3.5 rounded-xl text-sm font-medium mt-4 active:scale-95 transition-transform">Submit Overtime Report</button>
+                    <div id="ot-submit-done" class="hidden mt-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 text-center">
+                        <i class="fa-solid fa-check-circle text-2xl text-emerald-500 mb-2"></i>
+                        <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Overtime report submitted!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Tracker (shared by Patient & Escort; hidden in Guardian view) -->
+    <div id="aa-shared-progress" class="mx-5 mt-4 bg-white dark:bg-sf-800 rounded-2xl p-4 shadow-sm">
+        <h4 class="font-medium text-xs text-gray-400 mb-3 uppercase tracking-wider">Progress Tracker</h4>
+        <div class="space-y-2" id="aa-progress">
+            <div class="flex items-center gap-3" id="pr-1">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center bg-pri-100 dark:bg-pri-900" style="animation:pulse2 2s infinite"><i class="fa-solid fa-arrow-right text-pri-600 dark:text-pri-300 text-[10px]"></i></div>
+                <div><p class="text-sm font-medium">Pickup Verification</p><p class="text-[10px] text-gray-500">Waiting for code</p></div>
+            </div>
+            <div class="flex items-center gap-3 opacity-40" id="pr-2">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700"><i class="fa-solid fa-circle text-gray-400 text-[6px]"></i></div>
+                <div><p class="text-sm font-medium">Hospital Arrival</p><p class="text-[10px] text-gray-500">Pending</p></div>
+            </div>
+            <div class="flex items-center gap-3 opacity-40" id="pr-3">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700"><i class="fa-solid fa-circle text-gray-400 text-[6px]"></i></div>
+                <div><p class="text-sm font-medium">Leaving Hospital</p><p class="text-[10px] text-gray-500">Pending</p></div>
+            </div>
+            <div class="flex items-center gap-3 opacity-40" id="pr-4">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700"><i class="fa-solid fa-circle text-gray-400 text-[6px]"></i></div>
+                <div><p class="text-sm font-medium">Patient Settled</p><p class="text-[10px] text-gray-500">Pending</p></div>
+            </div>
+            <div class="flex items-center gap-3 opacity-40" id="pr-5">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700"><i class="fa-solid fa-circle text-gray-400 text-[6px]"></i></div>
+                <div><p class="text-sm font-medium">Summary Log</p><p class="text-[10px] text-gray-500">Pending</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role-Aware Bottom Action Button -->
+    <div class="mx-5 mt-4 mb-6">
+        <button onclick="openHelpOrEmergencyModal()" id="aa-bottom-action-btn" class="w-full bg-red-500 text-white py-3.5 rounded-2xl font-medium active:scale-95 transition-transform flex items-center justify-center gap-2">
+            <i id="aa-bottom-action-icon" class="fa-solid fa-triangle-exclamation"></i> <span id="aa-bottom-action-label">Emergency / Need Help</span>
+        </button>
+    </div>
+</div>
+<!-- ==================== BOTTOM NAVS ==================== -->
+<!-- Patient Nav -->
+<div class="bnav bg-white/90 dark:bg-sf-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 hidden" id="bnav-patient">
+    <div class="flex items-center justify-around py-2 px-2">
+        <button onclick="go('p-home')" class="ni on flex flex-col items-center py-1 px-4" data-pn="p-home"><i class="fa-solid fa-house text-base mb-0.5"></i><span class="text-[10px]">Home</span></button>
+        <button onclick="go('p-book')" class="ni flex flex-col items-center py-1 px-4" data-pn="p-book"><i class="fa-solid fa-calendar-plus text-base mb-0.5"></i><span class="text-[10px]">Book</span></button>
+        <button onclick="go('p-profile')" class="ni flex flex-col items-center py-1 px-4" data-pn="p-profile"><i class="fa-solid fa-user text-base mb-0.5"></i><span class="text-[10px]">Profile</span></button>
+    </div>
+</div>
+
+<!-- Escort Nav -->
+<div class="bnav bg-white/90 dark:bg-sf-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 hidden" id="bnav-escort">
+    <div class="flex items-center justify-around py-2 px-2">
+        <button onclick="go('e-home')" class="ni on flex flex-col items-center py-1 px-4" data-en="e-home"><i class="fa-solid fa-house text-base mb-0.5"></i><span class="text-[10px]">Home</span></button>
+        <button onclick="go('e-jobs')" class="ni flex flex-col items-center py-1 px-4" data-en="e-jobs"><i class="fa-solid fa-briefcase text-base mb-0.5"></i><span class="text-[10px]">Jobs</span></button>
+        <button onclick="go('e-profile')" class="ni flex flex-col items-center py-1 px-4" data-en="e-profile"><i class="fa-solid fa-user text-base mb-0.5"></i><span class="text-[10px]">Profile</span></button>
+    </div>
+</div>
+
+<!-- Guardian Nav -->
+<div class="bnav bg-white/90 dark:bg-sf-900/90 backdrop-blur-xl border-t border-gray-100 dark:border-gray-800 hidden" id="bnav-guardian">
+    <div class="flex items-center justify-around py-2 px-2">
+        <button onclick="go('g-home')" class="ni on flex flex-col items-center py-1 px-4" data-gn="g-home"><i class="fa-solid fa-house text-base mb-0.5"></i><span class="text-[10px]">Home</span></button>
+        <button onclick="go('g-book')" class="ni flex flex-col items-center py-1 px-4" data-gn="g-book"><i class="fa-solid fa-calendar-plus text-base mb-0.5"></i><span class="text-[10px]">Book</span></button>
+        <button onclick="switchPatient(currentGuardianPatient === 'P-0384' ? 'P-2244' : 'P-0384')" class="ni flex flex-col items-center py-1 px-4"><i class="fa-solid fa-arrow-right-arrow-left text-base mb-0.5"></i><span class="text-[10px]">Switch</span></button>
+        <button onclick="go('g-profile')" class="ni flex flex-col items-center py-1 px-4" data-gn="g-profile"><i class="fa-solid fa-user text-base mb-0.5"></i><span class="text-[10px]">Profile</span></button>
+    </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+<div id="modal-help-center" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="document.getElementById('modal-help-center').classList.add('hidden')"></div>
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white dark:bg-sf-900 rounded-t-3xl p-5 pb-8" style="animation:sUp .3s ease-out">
+        <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <h3 class="font-bold text-lg mb-4">Reject / Help Center</h3>
+        <div class="space-y-3">
+            <button onclick="toast('Overtime report / session rejected — CareConnect support notified');document.getElementById('modal-help-center').classList.add('hidden')" class="w-full bg-red-500 text-white p-4 rounded-2xl flex items-center gap-3 active:scale-95 transition-transform text-left">
+                <i class="fa-solid fa-ban text-xl"></i>
+                <div><p class="font-medium text-sm">Reject Report / Dispute</p><p class="text-xs opacity-80">Flag an issue with this session or overtime claim</p></div>
+            </button>
+            <button onclick="toast('Connecting to CareConnect Help Center...');document.getElementById('modal-help-center').classList.add('hidden')" class="w-full bg-pri-500 text-white p-4 rounded-2xl flex items-center gap-3 active:scale-95 transition-transform text-left">
+                <i class="fa-solid fa-circle-question text-xl"></i>
+                <div><p class="font-medium text-sm">Help Center &amp; Support</p><p class="text-xs opacity-80">Get assistance from CareConnect team</p></div>
+            </button>
+            <button onclick="document.getElementById('modal-help-center').classList.add('hidden')" class="w-full py-3 text-gray-500 text-sm">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-escort-contact" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="document.getElementById('modal-escort-contact').classList.add('hidden')"></div>
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white dark:bg-sf-900 rounded-t-3xl p-5 pb-8" style="animation:sUp .3s ease-out">
+        <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <h3 class="font-bold text-lg mb-4">Call Patient / Emergency</h3>
+        <div class="space-y-3">
+            <!-- 1. Call Patient card (matching Picture 1 UI without medical person icon) -->
+            <div class="w-full bg-white dark:bg-sf-800 border border-gray-100 dark:border-gray-700 shadow-sm p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                    <p class="font-bold text-base text-gray-900 dark:text-white">Call Patient</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Mrs. Chan • P-0384</p>
+                    <p class="text-xs text-emerald-500 font-medium mt-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Online
+                    </p>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <button onclick="toast('Opening chat with Patient...');document.getElementById('modal-escort-contact').classList.add('hidden')" aria-label="Message Patient" class="w-11 h-11 rounded-full bg-pri-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                        <i class="fa-solid fa-comment-dots text-base"></i>
+                    </button>
+                    <button onclick="toast('Calling Patient (Mrs. Chan)...');document.getElementById('modal-escort-contact').classList.add('hidden')" aria-label="Call Patient" class="w-11 h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                        <i class="fa-solid fa-phone text-base"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Call Guardian card (matching Picture 1 UI without medical person icon) -->
+            <div class="w-full bg-white dark:bg-sf-800 border border-gray-100 dark:border-gray-700 shadow-sm p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                    <p class="font-bold text-base text-gray-900 dark:text-white">Call Guardian</p>
+                    <p class="text-xs text-gray-500 mt-0.5">David Chan • G-5512</p>
+                    <p class="text-xs text-emerald-500 font-medium mt-1 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Online
+                    </p>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <button onclick="toast('Opening chat with Guardian...');document.getElementById('modal-escort-contact').classList.add('hidden')" aria-label="Message Guardian" class="w-11 h-11 rounded-full bg-pri-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                        <i class="fa-solid fa-comment-dots text-base"></i>
+                    </button>
+                    <button onclick="toast('Calling Guardian (David Chan)...');document.getElementById('modal-escort-contact').classList.add('hidden')" aria-label="Call Guardian" class="w-11 h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                        <i class="fa-solid fa-phone text-base"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Call 999 -->
+            <button onclick="toast('Calling 999...');document.getElementById('modal-escort-contact').classList.add('hidden')" class="w-full bg-red-500 text-white p-4 rounded-2xl flex items-center gap-3 active:scale-95 transition-transform text-left">
+                <i class="fa-solid fa-phone-volume text-xl"></i>
+                <div><p class="font-medium text-sm">Call 999</p><p class="text-xs opacity-80">Emergency Services</p></div>
+            </button>
+
+            <button onclick="document.getElementById('modal-escort-contact').classList.add('hidden')" class="w-full py-3 text-gray-500 text-sm">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-emergency" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="document.getElementById('modal-emergency').classList.add('hidden')"></div>
+    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white dark:bg-sf-900 rounded-t-3xl p-5 pb-8" style="animation:sUp .3s ease-out">
+        <div class="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4"></div>
+        <h3 class="font-bold text-lg mb-4">Emergency</h3>
+        <div class="space-y-3">
+            <button onclick="toast('Calling 999...');document.getElementById('modal-emergency').classList.add('hidden')" class="w-full bg-red-500 text-white p-4 rounded-2xl flex items-center gap-3 active:scale-95 transition-transform text-left">
+                <i class="fa-solid fa-phone-volume text-xl"></i>
+                <div><p class="font-medium text-sm">Call 999</p><p class="text-xs opacity-80">Emergency Services</p></div>
+            </button>
+            <button onclick="toast('Family notified');document.getElementById('modal-emergency').classList.add('hidden')" class="w-full bg-orange-500 text-white p-4 rounded-2xl flex items-center gap-3 active:scale-95 transition-transform text-left">
+                <i class="fa-solid fa-people-roof text-xl"></i>
+                <div><p class="font-medium text-sm">Alert Family</p><p class="text-xs opacity-80">Notify emergency contact</p></div>
+            </button>
+            <button onclick="document.getElementById('modal-emergency').classList.add('hidden')" class="w-full py-3 text-gray-500 text-sm">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast-box" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[60] w-[90%] max-w-[400px] pointer-events-none"></div>
+
+        </div><!-- end app -->
+    </div><!-- end demo-content -->
+</div><!-- end demo-container -->
+
+<script>
+// ============ DEMO STATE ============
+let demoMode = true;
+let currentRole = null;
+let currentGuardianPatient = 'P-0384';
+let navStack = [];
+let stageCountdownInterval = null;
+let stageCountdownSeconds = 0;
+let apptStartTimestamp = null;
+let apptEndTimestamp = null;
+
+// Mock user data for each role
+const mockUsers = {
+    patient: {
+        role: 'patient',
+        firstName: 'Mrs.',
+        lastName: 'Chan',
+        email: 'chan@email.com',
+        phone: '+852 9123 0384',
+        code: 'P-0384',
+        disabilityLevel: '2',
+        medicalNotes: 'Cardiology patient, requires cane assistance',
+        primaryAddress: '123 Pok Fu Lam Road, HKU Area',
+        secondaryAddress: '',
+        haGoId: 'HA-CH-0384',
+        profileComplete: true
+    },
+    escort: {
+        role: 'escort',
+        firstName: 'Mary',
+        lastName: 'Chan',
+        email: 'mary.chan@email.com',
+        phone: '+852 9456 1088',
+        code: 'E-1088',
+        experience: 'experienced',
+        languages: ['Cantonese', 'English']
+    },
+    guardian: {
+        role: 'guardian',
+        firstName: 'David',
+        lastName: 'Chan',
+        email: 'david.chan@email.com',
+        phone: '+852 9789 5512',
+        code: 'G-5512',
+        relationship: 'Son/Daughter',
+        linkedPatients: ['P-0384', 'P-2244']
+    }
+};
+
+// Mock escort jobs with weighted priority (24-hour hard rule + weighted matching)
+const escortJobs = [
+    {
+        id: 1,
+        priority: 999, // 24h override
+        matchScore: 0,
+        badge: '<24H UNPAIRED OVERRIDE',
+        type: 'onetime',
+        patient: 'Mrs. Ho',
+        urgency: 'Emergency Visit (Urgent)',
+        date: 'Today, ASAP (in 4 hrs)',
+        hospital: 'Prince of Wales Hospital',
+        disability: 3,
+        wage: 150,
+        transport: true,
+        breakdown: '24-Hour Hard Rule Override'
+    },
+    {
+        id: 2,
+        priority: 94,
+        matchScore: 94,
+        type: 'regular',
+        patient: 'Mrs. Lam',
+        urgency: 'Hospital Visit',
+        date: 'Tomorrow, 10:00 AM',
+        hospital: 'Queen Mary Hospital',
+        disability: 2,
+        wage: 80,
+        transport: false,
+        breakdown: 'Location ✓ • Disability Lv ✓ • Specialty ✓'
+    },
+    {
+        id: 3,
+        priority: 81,
+        matchScore: 81,
+        type: 'regular',
+        patient: 'Mr. Wong',
+        urgency: 'Dialysis Follow-up',
+        date: 'Nov 25, 10:00 AM',
+        hospital: 'Yan Chai Hospital',
+        disability: 3,
+        wage: 110,
+        transport: true,
+        breakdown: 'Location ✓ • Disability Lv ✓'
+    },
+    {
+        id: 4,
+        priority: 68,
+        matchScore: 68,
+        type: 'onetime',
+        patient: 'Mr. Ng',
+        urgency: 'Clinic Appointment (Volunteer)',
+        date: 'Dec 28, 2:00 PM',
+        hospital: 'Central Clinic',
+        disability: 1,
+        wage: 0,
+        transport: false,
+        breakdown: 'Volunteer service'
+    }
+];
+
+// ============ DARK MODE ============
+if(window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)').matches) {
+    document.documentElement.classList.add('dark');
+}
+
+// ============ DEMO NAVIGATION ============
+function demoGo(screen) {
+    document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+    go(screen);
+}
+
+function loadDemoRole(role) {
+    currentRole = role;
+    const user = mockUsers[role];
+
+    document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+
+    if (role === 'patient') {
+        go('p-home');
+        document.getElementById('bnav-patient').classList.remove('hidden');
+        document.getElementById('bnav-escort').classList.add('hidden');
+        document.getElementById('bnav-guardian').classList.add('hidden');
+    } else if (role === 'escort') {
+        go('e-home');
+        renderEscortJobs();
+        document.getElementById('bnav-escort').classList.remove('hidden');
+        document.getElementById('bnav-patient').classList.add('hidden');
+        document.getElementById('bnav-guardian').classList.add('hidden');
+    } else if (role === 'guardian') {
+        go('g-home');
+        currentGuardianPatient = 'P-0384';
+        updateGuardianPatientView();
+        document.getElementById('bnav-guardian').classList.remove('hidden');
+        document.getElementById('bnav-patient').classList.add('hidden');
+        document.getElementById('bnav-escort').classList.add('hidden');
+    }
+
+    toast(`Loaded ${role.charAt(0).toUpperCase() + role.slice(1)} demo account`);
+}
+
+function resetDemoState() {
+    currentRole = null;
+    currentGuardianPatient = 'P-0384';
+    navStack = [];
+
+    document.getElementById('bnav-patient').classList.add('hidden');
+    document.getElementById('bnav-escort').classList.add('hidden');
+    document.getElementById('bnav-guardian').classList.add('hidden');
+
+    document.querySelectorAll('[data-filled]').forEach(el => el.setAttribute('data-filled', 'false'));
+
+    go('login');
+    toast('Demo state reset');
+}
+
+// ============ NAVIGATION ============
+function go(id) {
+    document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+    const el = document.getElementById('scr-' + id);
+    if (el) el.classList.add('on');
+    if (navStack[navStack.length - 1] !== id) navStack.push(id);
+
+    document.querySelectorAll('[data-pn]').forEach(n => n.classList.toggle('on', n.dataset.pn === id));
+    document.querySelectorAll('[data-en]').forEach(n => n.classList.toggle('on', n.dataset.en === id));
+    document.querySelectorAll('[data-gn]').forEach(n => n.classList.toggle('on', n.dataset.gn === id));
+
+    if (id === 'active-appt') setupActiveAppt();
+}
+
+function goBack() {
+    navStack.pop();
+    const prev = navStack[navStack.length - 1] || 'login';
+    navStack.pop();
+    go(prev);
+}
+
+// ============ LOGIN & REGISTER ============
+function handleLogin() {
+    toast('Demo mode: Use sidebar to load role dashboards');
+}
+
+function selectRegRole(role) {
+    document.getElementById('reg-role-input').value = role;
+
+    ['patient', 'escort', 'guardian'].forEach(r => {
+        const tab = document.getElementById('reg-tab-' + r);
+        if (r === role) {
+            tab.className = 'flex-1 px-4 py-2 rounded-lg font-medium text-sm ' +
+                (r === 'patient' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300' :
+                 r === 'escort' ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300' :
+                 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300');
+        } else {
+            tab.className = 'flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-sf-800 text-gray-600 dark:text-gray-300 font-medium text-sm';
+        }
+    });
+
+    document.getElementById('reg-patient-fields').classList.toggle('hidden', role !== 'patient');
+    document.getElementById('reg-escort-fields').classList.toggle('hidden', role !== 'escort');
+    document.getElementById('reg-guardian-fields').classList.toggle('hidden', role !== 'guardian');
+}
+
+function handleRegister(e) {
+    e.preventDefault();
+    const role = document.getElementById('reg-role-input').value;
+    autoFillOrSubmit(e.target, () => {
+        toast(`Account created! Loading ${role} dashboard...`);
+        setTimeout(() => loadDemoRole(role), 800);
+    });
+}
+
+// ============ AUTO-FILL ON FIRST CLICK, SUBMIT ON SECOND CLICK ============
+function autoFillOrSubmit(form, submitCallback) {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const isFilled = submitBtn.getAttribute('data-filled') === 'true';
+
+    if (!isFilled) {
+        autoFillForm(form);
+        submitBtn.setAttribute('data-filled', 'true');
+        toast('Mock data filled — click again to submit');
+    } else {
+        submitCallback();
+    }
+}
+
+function autoFillForm(form) {
+    const formId = form.id;
+
+    if (formId === 'reg-form') {
+        const role = document.getElementById('reg-role-input').value;
+        form.querySelector('[name="firstName"]').value = role === 'patient' ? 'Mrs.' : role === 'escort' ? 'Mary' : 'David';
+        form.querySelector('[name="lastName"]').value = 'Chan';
+        form.querySelector('[name="email"]').value = role + '@email.com';
+        form.querySelector('[name="phone"]').value = '+852 9123 4567';
+        if (form.querySelector('[name="password"]')) form.querySelector('[name="password"]').value = 'demo1234';
+
+        if (role === 'escort') {
+            form.querySelector('[name="experience"]').value = 'experienced';
+            const langCheckboxes = form.querySelectorAll('[name="languages"]');
+            if (langCheckboxes[0]) langCheckboxes[0].checked = true;
+        } else if (role === 'guardian') {
+            form.querySelector('[name="relationship"]').value = 'Son/Daughter';
+            form.querySelector('[name="patientCodeLink"]').value = 'P-0384, P-2244';
+        }
+    } else if (formId === 'portal-form') {
+        form.querySelector('[name="disabilityLevel"]').value = '2';
+        form.querySelector('[name="medicalNotes"]').value = 'Cardiology patient, requires cane assistance';
+        form.querySelector('[name="primaryAddress"]').value = '123 Pok Fu Lam Road, HKU Area';
+        if (form.querySelector('[name="haGoId"]')) form.querySelector('[name="haGoId"]').value = 'HA-CH-0384';
+    } else if (formId === 'p-book-form' || formId === 'g-book-form') {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        form.querySelector('[name="date"]').value = tomorrow.toISOString().split('T')[0];
+        form.querySelector('[name="time"]').value = '10:00';
+        if (form.querySelector('[name="duration"]')) form.querySelector('[name="duration"]').value = '3';
+        if (form.querySelector('[name="hospital"]')) form.querySelector('[name="hospital"]').value = 'Queen Mary Hospital';
+        if (form.querySelector('[name="hourlyWage"]')) form.querySelector('[name="hourlyWage"]').value = '100';
+        if (form.querySelector('[name="transportComp"]')) form.querySelector('[name="transportComp"]').value = '30';
+    }
+}
+
+// ============ PATIENT FUNCTIONS ============
+function savePortal(e) {
+    e.preventDefault();
+    autoFillOrSubmit(e.target, () => {
+        toast('Medical information saved!');
+        goBack();
+    });
+}
+
+function submitPatientBooking(e) {
+    e.preventDefault();
+    autoFillOrSubmit(e.target, () => {
+        toast('Booking request submitted!');
+        goBack();
+    });
+}
+
+function increaseWage() {
+    toast('Hourly wage increased by $20/hr!');
+}
+
+// ============ ESCORT INFORMATION ============
+function saveEscortInfo(e) {
+    e.preventDefault();
+    autoFillOrSubmit(e.target, () => {
+        toast('Escort information saved!');
+        goBack();
+    });
+}
+
+function verifyEscortCredential(type) {
+    if (type === 'qual') {
+        const statusEl = document.getElementById('qual-verify-status');
+        if (statusEl) {
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified by CareConnect on 12 Nov 2025';
+        }
+        toast('Medical qualification verified!');
+    } else if (type === 'scrc') {
+        const code = document.getElementById('e-info-scrc-code')?.value.trim();
+        if (!code) {
+            toast('Please enter a criminal/SCRC reference code first');
+            return;
+        }
+        const statusEl = document.getElementById('scrc-verify-status');
+        if (statusEl) {
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Verified by CareConnect on 12 Nov 2025';
+        }
+        toast('Criminal / SCRC record verified!');
+    }
+}
+
+function handleQualFileUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        document.getElementById('qual-file-name').textContent = file.name;
+        toast('Qualification document updated: ' + file.name);
+    }
+}
+
+// ============ ESCORT FUNCTIONS ============
+function renderEscortJobs() {
+    const container = document.getElementById('e-jobs-list');
+    const sorted = [...escortJobs].sort((a, b) => b.priority - a.priority);
+
+    container.innerHTML = sorted.map((job, idx) => {
+        const dlvlClass = job.disability === 4 ? 'dlv4' : job.disability === 3 ? 'dlv3' : job.disability === 2 ? 'dlv2' : 'dlv1';
+        const isPinned = job.priority === 999;
+
+        return `<div class="${isPinned ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700' : 'bg-white dark:bg-sf-800'} rounded-2xl p-4 shadow-sm ${dlvlClass}">
+            ${isPinned ? `<div class="flex items-center gap-2 mb-2">
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-red-500 text-white font-bold">⚡ ${job.badge}</span>
+                <span class="text-xs font-medium text-red-600 dark:text-red-400">PINNED #${idx + 1}</span>
+            </div>` : `<div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-medium">#{idx + 1}</span>
+                <span class="text-[9px] px-2 py-0.5 rounded-full bg-pri-100 dark:bg-pri-900 text-pri-600 dark:text-pri-300">Match: ${job.matchScore}%</span>
+                <span class="text-[9px] px-2 py-0.5 rounded-full ${job.type === 'regular' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' : 'bg-amber-100 dark:bg-amber-900 text-amber-600 dark:text-amber-300'}">${job.type === 'regular' ? 'Regular' : 'One-Time'}</span>
+            </div>`}
+            <p class="font-medium text-sm">${job.patient} — ${job.urgency}</p>
+            <p class="text-xs text-gray-500 mt-1">${job.date} • ${job.hospital}</p>
+            <p class="text-xs ${isPinned ? 'text-orange-600 dark:text-orange-400' : 'text-gray-600 dark:text-gray-400'}">Lv ${job.disability} • $${job.wage}/hr${job.transport ? ' + Transport' : ''}${job.wage === 0 ? ' (Volunteer)' : ''}</p>
+            <p class="text-[10px] text-gray-400 mt-1">${job.breakdown}</p>
+            <button onclick="acceptJob(${job.id})" class="mt-3 w-full ${isPinned ? 'bg-red-500' : 'bg-pri-500'} text-white py-2.5 rounded-xl text-sm font-medium active:scale-95 transition-transform">
+                ${isPinned ? 'Accept Emergency Job' : 'Apply for This Job'}
+            </button>
+        </div>`;
+    }).join('');
+}
+
+function acceptJob(id) {
+    toast('Job accepted! Check your schedule.');
+}
+
+function filterJobs() {
+    renderEscortJobs();
+}
+
+function setJobFilter(filter) {
+    document.querySelectorAll('.job-filter-btn').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+            btn.className = 'job-filter-btn text-[10px] px-3 py-1.5 rounded-full whitespace-nowrap bg-pri-500 text-white font-medium';
+        } else {
+            btn.className = 'job-filter-btn text-[10px] px-3 py-1.5 rounded-full whitespace-nowrap bg-gray-100 dark:bg-sf-800 text-gray-600 dark:text-gray-300';
+        }
+    });
+}
+
+// ============ GUARDIAN FUNCTIONS ============
+function switchPatient(patientCode) {
+    currentGuardianPatient = patientCode;
+    updateGuardianPatientView();
+    toast(`Switched to ${patientCode === 'P-0384' ? 'Mrs. Chan' : 'Mr. Chan'}`);
+}
+
+function updateGuardianPatientView() {
+    const isMrs = currentGuardianPatient === 'P-0384';
+
+    document.getElementById('g-patient-btn-0384').className = isMrs ?
+        'w-full flex items-center gap-2 p-2 rounded-lg bg-emerald-100 dark:bg-emerald-800 border-2 border-emerald-500' :
+        'w-full flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-sf-700 border-2 border-gray-200 dark:border-gray-600';
+    document.getElementById('g-patient-btn-2244').className = !isMrs ?
+        'w-full flex items-center gap-2 p-2 rounded-lg bg-emerald-100 dark:bg-emerald-800 border-2 border-emerald-500' :
+        'w-full flex items-center gap-2 p-2 rounded-lg bg-white dark:bg-sf-700 border-2 border-gray-200 dark:border-gray-600';
+
+    document.getElementById('g-alert-patient').textContent = isMrs ? "Mrs. Chan's appointment has no escort" : "Mr. Chan's appointment has no escort";
+    document.getElementById('g-active-patient').textContent = isMrs ? 'Active Session for Mrs. Chan' : 'Active Session for Mr. Chan';
+    document.getElementById('g-hago-title').textContent = isMrs ? 'HA Go (Mrs. Chan)' : 'HA Go (Mr. Chan)';
+    document.getElementById('g-booking-for').textContent = isMrs ? 'Mrs. Chan (P-0384)' : 'Mr. Chan (P-2244)';
+}
+
+function submitGuardianBooking(e) {
+    e.preventDefault();
+    autoFillOrSubmit(e.target, () => {
+        toast('Booking request submitted for patient!');
+        goBack();
+    });
+}
+
+function increaseWageGuardian() {
+    toast('Hourly wage increased by $20/hr for patient!');
+}
+
+// ============ ACTIVE APPOINTMENT ============
+let aaCurrentStage = 1;
+let aaCountdownInterval = null;
+
+function openHelpOrEmergencyModal() {
+    if (currentRole === 'guardian') {
+        document.getElementById('modal-help-center').classList.remove('hidden');
+    } else if (currentRole === 'escort') {
+        document.getElementById('modal-escort-contact').classList.remove('hidden');
+    } else {
+        document.getElementById('modal-emergency').classList.remove('hidden');
+    }
+}
+
+function setupActiveAppt() {
+    // Reset stage
+    aaCurrentStage = 1;
+    
+    // Show correct view based on role
+    document.getElementById('aa-patient-view').classList.toggle('hidden', currentRole !== 'patient');
+    document.getElementById('aa-guardian-view').classList.toggle('hidden', currentRole !== 'guardian');
+    document.getElementById('aa-escort-view').classList.toggle('hidden', currentRole !== 'escort');
+
+    // Hide redundant bottom Progress Tracker in Guardian view (Guardian already has detailed Progress Tracker at top)
+    const sharedProgress = document.getElementById('aa-shared-progress');
+    if (sharedProgress) sharedProgress.classList.toggle('hidden', currentRole === 'guardian');
+
+    // Configure bottom button icon & label per role
+    const actionIcon = document.getElementById('aa-bottom-action-icon');
+    const actionLabel = document.getElementById('aa-bottom-action-label');
+    if (actionIcon && actionLabel) {
+        if (currentRole === 'guardian') {
+            actionIcon.className = 'fa-solid fa-circle-question';
+            actionLabel.textContent = 'Reject / Help Center';
+        } else if (currentRole === 'escort') {
+            actionIcon.className = 'fa-solid fa-phone';
+            actionLabel.textContent = 'Call Patient / Emergency';
+        } else {
+            actionIcon.className = 'fa-solid fa-triangle-exclamation';
+            actionLabel.textContent = 'Emergency / Need Help';
+        }
+    }
+    
+    // Reset escort stages
+    if (currentRole === 'escort') {
+        for (let i = 1; i <= 5; i++) {
+            const stEl = document.getElementById('aa-stage-' + i + '-escort');
+            if (stEl) stEl.classList.toggle('hidden', i !== 1);
+        }
+        
+        // Reset code inputs
+        document.querySelectorAll('.aa-code-digit').forEach(inp => { inp.value = ''; inp.disabled = false; });
+        document.getElementById('aa-code-error')?.classList.add('hidden');
+        document.getElementById('aa-code-success')?.classList.add('hidden');
+        const verBtn = document.getElementById('aa-verify-btn');
+        if (verBtn) {
+            verBtn.disabled = false;
+            verBtn.setAttribute('data-filled', 'false');
+        }
+        
+        // Reset photo stages
+        ['s2-done', 's3-done', 's4-done'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        ['s2-upload-btn', 's3-upload-btn', 's4-upload-btn'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        });
+        
+        // Reset summary log
+        document.getElementById('sum-done').value = '';
+        document.getElementById('sum-notes').value = '';
+        document.getElementById('sum-actions').value = '';
+        const submitBtn = document.getElementById('aa-submit-log-btn');
+        if (submitBtn) submitBtn.setAttribute('data-filled', 'false');
+        document.getElementById('aa-log-done')?.classList.add('hidden');
+
+        // Reset timestamp buttons
+        const btnStart = document.getElementById('btn-appt-start');
+        if (btnStart) { btnStart.disabled = false; btnStart.classList.remove('opacity-50'); }
+        const btnEnd = document.getElementById('btn-appt-end');
+        if (btnEnd) { btnEnd.disabled = true; btnEnd.classList.add('opacity-50'); }
+        document.getElementById('appt-start-recorded')?.classList.add('hidden');
+        document.getElementById('appt-end-recorded')?.classList.add('hidden');
+        apptStartTimestamp = null;
+        apptEndTimestamp = null;
+
+        // Reset overtime section
+        document.getElementById('aa-overtime-detail')?.classList.add('hidden');
+        document.getElementById('ot-photo-done')?.classList.add('hidden');
+        const otBtn = document.getElementById('ot-submit-btn');
+        if (otBtn) { otBtn.disabled = false; otBtn.setAttribute('data-filled', 'false'); }
+        document.getElementById('ot-submit-done')?.classList.add('hidden');
+        if (document.getElementById('ot-appt-end-time')) document.getElementById('ot-appt-end-time').value = '';
+        if (document.getElementById('ot-medicine-time')) document.getElementById('ot-medicine-time').value = '';
+        if (document.getElementById('ot-reason')) document.getElementById('ot-reason').value = '';
+
+        // Clear any stage countdown
+        if (stageCountdownInterval) { clearInterval(stageCountdownInterval); stageCountdownInterval = null; }
+    }
+    
+    // Reset progress tracker
+    updateProgressTracker(1);
+    updateStageBadge(1);
+}
+
+function updateStageBadge(stage) {
+    const badge = document.getElementById('aa-stage-badge');
+    if (badge) badge.textContent = `Stage ${stage}/5`;
+}
+
+function updateProgressTracker(currentStage) {
+    for (let i = 1; i <= 5; i++) {
+        const prEl = document.getElementById('pr-' + i);
+        if (!prEl) continue;
+        
+        const icon = prEl.querySelector('div');
+        const label = prEl.querySelector('p:last-child');
+        
+        if (i < currentStage) {
+            // Completed
+            prEl.className = 'flex items-center gap-3';
+            icon.className = 'w-7 h-7 rounded-full flex items-center justify-center bg-emerald-500';
+            icon.innerHTML = '<i class="fa-solid fa-check text-white text-[10px]"></i>';
+            label.textContent = 'Complete';
+        } else if (i === currentStage) {
+            // Current
+            prEl.className = 'flex items-center gap-3';
+            icon.className = 'w-7 h-7 rounded-full flex items-center justify-center bg-pri-100 dark:bg-pri-900';
+            icon.style.animation = 'pulse2 2s infinite';
+            icon.innerHTML = '<i class="fa-solid fa-arrow-right text-pri-600 dark:text-pri-300 text-[10px]"></i>';
+            label.textContent = 'In progress';
+        } else {
+            // Pending
+            prEl.className = 'flex items-center gap-3 opacity-40';
+            icon.className = 'w-7 h-7 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-700';
+            icon.style.animation = '';
+            icon.innerHTML = '<i class="fa-solid fa-circle text-gray-400 text-[6px]"></i>';
+            label.textContent = 'Pending';
+        }
+    }
+}
+
+// ============ PATIENT FUNCTIONS ============
+function confirmPatientPickup() {
+    document.getElementById('patient-confirm-pickup').disabled = true;
+    document.getElementById('patient-pickup-confirmed').classList.remove('hidden');
+    toast('Pickup confirmed! Escort has been notified.');
+}
+
+function confirmPatientEnd() {
+    document.getElementById('patient-confirm-end').disabled = true;
+    document.getElementById('patient-end-confirmed').classList.remove('hidden');
+    toast('Appointment completion confirmed!');
+}
+
+// ============ GUARDIAN FUNCTIONS ============
+function confirmGuardianPickup() {
+    document.getElementById('guardian-confirm-pickup').disabled = true;
+    document.getElementById('guardian-pickup-confirmed').classList.remove('hidden');
+    toast('Pickup confirmed! Escort has been notified.');
+}
+
+function confirmGuardianEnd() {
+    document.getElementById('guardian-confirm-end').disabled = true;
+    document.getElementById('guardian-end-confirmed').classList.remove('hidden');
+    toast('Appointment completion confirmed!');
+}
+
+// ============ ESCORT FUNCTIONS ============
+function verifyPickupCode() {
+    const btn = document.getElementById('aa-verify-btn');
+
+    if (btn.getAttribute('data-filled') !== 'true') {
+        // First click: Auto-fill code
+        const digits = document.querySelectorAll('.aa-code-digit');
+        digits[0].value = '0';
+        digits[1].value = '3';
+        digits[2].value = '8';
+        digits[3].value = '4';
+        btn.setAttribute('data-filled', 'true');
+        toast('Code filled — click again to verify');
+    } else {
+        // Second click: Verify
+        const digits = document.querySelectorAll('.aa-code-digit');
+        let code = '';
+        digits.forEach(d => code += d.value);
+
+        if (code === '0384') {
+            document.getElementById('aa-code-error').classList.add('hidden');
+            document.getElementById('aa-code-success').classList.remove('hidden');
+            btn.disabled = true;
+            digits.forEach(d => d.disabled = true);
+            
+            toast('Pickup verified! Moving to Stage 2...');
+            
+            // Move to Stage 2 after delay
+            setTimeout(() => {
+                moveToStage(2);
+            }, 1500);
+        } else {
+            document.getElementById('aa-code-error').classList.remove('hidden');
+            digits.forEach(d => d.value = '');
+            btn.setAttribute('data-filled', 'false');
+            toast('Invalid code. Please try again.');
+        }
+    }
+}
+
+function handleStagePhoto(event, stage) {
+    // Mock photo upload
+    const file = event.target.files[0];
+    if (file) {
+        toast(`Stage ${stage} photo uploaded (mock)`);
+        
+        // Show done state
+        document.getElementById(`s${stage}-upload-btn`).classList.add('hidden');
+        document.getElementById(`s${stage}-done`).classList.remove('hidden');
+    }
+}
+
+function confirmStage(stage) {
+    toast(`Stage ${stage} complete! Moving to next stage...`);
+    
+    setTimeout(() => {
+        moveToStage(stage + 1);
+    }, 1000);
+}
+
+function moveToStage(stage) {
+    aaCurrentStage = stage;
+
+    // Clear any existing stage countdown
+    if (stageCountdownInterval) { clearInterval(stageCountdownInterval); stageCountdownInterval = null; }
+
+    // Hide current escort stages
+    for (var i = 1; i <= 5; i++) {
+        var stEl = document.getElementById('aa-stage-' + i + '-escort');
+        if (stEl) stEl.classList.add('hidden');
+    }
+
+    // Show target stage
+    var targetEl = document.getElementById('aa-stage-' + stage + '-escort');
+    if (targetEl) targetEl.classList.remove('hidden');
+
+    // Update progress tracker
+    updateProgressTracker(stage);
+    updateStageBadge(stage);
+
+    // Start countdown for stages 2-4
+    var countdownMap = { 2: 10800, 3: 8041, 4: 2378 }; // 03:00:00, 02:14:01, 00:39:38
+    var countdownElMap = { 2: 's2-countdown', 3: 's3-countdown', 4: 's4-countdown' };
+
+    if (countdownMap[stage]) {
+        stageCountdownSeconds = countdownMap[stage];
+        startStageCountdown(countdownElMap[stage]);
+    }
+
+    // Show overtime detail form after summary log submitted
+    if (stage === 5) {
+        // No countdown for stage 5 - overtime is displayed statically
+    }
+}
+
+function submitSummaryLog() {
+    const btn = document.getElementById('aa-submit-log-btn');
+
+    if (btn.getAttribute('data-filled') !== 'true') {
+        // First click: Auto-fill
+        document.getElementById('sum-done').value = 'Cardiology consultation completed. ECG and blood pressure checked.';
+        document.getElementById('sum-notes').value = 'Doctor advised to continue current medication. Monitor blood pressure daily.';
+        document.getElementById('sum-actions').value = 'Follow-up appointment in 3 months. Take medication twice daily with meals.';
+        btn.setAttribute('data-filled', 'true');
+        toast('Summary filled — click again to submit');
+    } else {
+        // Second click: Submit
+        const done = document.getElementById('sum-done').value;
+        const notes = document.getElementById('sum-notes').value;
+        const actions = document.getElementById('sum-actions').value;
+        
+        if (!done || !notes || !actions) {
+            toast('Please fill all three questions');
+            return;
+        }
+        
+        // Update guardian report if viewing as guardian
+        document.getElementById('report-done').textContent = done;
+        document.getElementById('report-notes').textContent = notes;
+        document.getElementById('report-actions').textContent = actions;
+        
+        // Show success
+        btn.disabled = true;
+        document.getElementById('aa-log-done').classList.remove('hidden');
+        
+        // Stop countdown
+        if (aaCountdownInterval) {
+            clearInterval(aaCountdownInterval);
+            aaCountdownInterval = null;
+        }
+        
+        toast('Summary log submitted successfully!');
+
+        // Show overtime detail section
+        document.getElementById('aa-overtime-detail')?.classList.remove('hidden');
+
+        // Auto-fill the appointment end time in overtime form
+        if (apptEndTimestamp) {
+            document.getElementById('ot-appt-end-time').value = apptEndTimestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+    }
+}
+
+// ============ STAGE COUNTDOWN ============
+function startStageCountdown(elementId) {
+    if (stageCountdownInterval) clearInterval(stageCountdownInterval);
+
+    var el = document.getElementById(elementId);
+    if (!el) return;
+
+    updateCountdownDisplay(el, stageCountdownSeconds);
+
+    stageCountdownInterval = setInterval(function() {
+        stageCountdownSeconds--;
+        updateCountdownDisplay(el, stageCountdownSeconds);
+
+        if (stageCountdownSeconds <= 0) {
+            clearInterval(stageCountdownInterval);
+            stageCountdownInterval = null;
+        }
+    }, 1000);
+}
+
+function updateCountdownDisplay(el, totalSec) {
+    var isNegative = totalSec < 0;
+    var absSec = Math.abs(totalSec);
+    var h = Math.floor(absSec / 3600);
+    var m = Math.floor((absSec % 3600) / 60);
+    var s = absSec % 60;
+    var display = (isNegative ? '- ' : '') + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    el.textContent = display;
+
+    if (isNegative || totalSec === 0) {
+        el.classList.remove('text-blue-700', 'text-amber-700', 'text-emerald-700');
+        el.classList.add('text-red-600');
+    }
+}
+
+// ============ TIMESTAMP RECORDING ============
+function recordTimestamp(type) {
+    var now = new Date();
+    var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    if (type === 'appt-start') {
+        apptStartTimestamp = now;
+        document.getElementById('btn-appt-start').disabled = true;
+        document.getElementById('btn-appt-start').classList.add('opacity-50');
+        document.getElementById('appt-start-recorded').classList.remove('hidden');
+        document.getElementById('appt-start-time').textContent = timeStr;
+
+        // Enable end button
+        document.getElementById('btn-appt-end').disabled = false;
+        document.getElementById('btn-appt-end').classList.remove('opacity-50');
+
+        toast('Appointment start recorded: ' + timeStr);
+    } else if (type === 'appt-end') {
+        apptEndTimestamp = now;
+        document.getElementById('btn-appt-end').disabled = true;
+        document.getElementById('btn-appt-end').classList.add('opacity-50');
+        document.getElementById('appt-end-recorded').classList.remove('hidden');
+        document.getElementById('appt-end-time').textContent = timeStr;
+
+        toast('Appointment end recorded: ' + timeStr);
+    }
+}
+
+// ============ OVERTIME FUNCTIONS ============
+function handleOvertimePhoto(event) {
+    var file = event.target.files[0];
+    if (file) {
+        toast('Overtime proof photo uploaded');
+        document.getElementById('ot-upload-btn').classList.add('hidden');
+        document.getElementById('ot-photo-done').classList.remove('hidden');
+    }
+}
+
+function submitOvertimeReport() {
+    var btn = document.getElementById('ot-submit-btn');
+
+    if (btn.getAttribute('data-filled') !== 'true') {
+        // Auto-fill
+        document.getElementById('ot-appt-end-time').value = apptEndTimestamp ? apptEndTimestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '2:05 PM';
+        document.getElementById('ot-medicine-time').value = '37 minutes';
+        document.getElementById('ot-reason').value = 'Waiting for medicine took longer than expected. Pharmacy was busy with multiple prescriptions ahead.';
+        btn.setAttribute('data-filled', 'true');
+        toast('Overtime data filled — click again to submit');
+    } else {
+        btn.disabled = true;
+        document.getElementById('ot-submit-done').classList.remove('hidden');
+
+        // Update guardian overtime report
+        var otEnd = document.getElementById('ot-appt-end-time').value;
+        var otMed = document.getElementById('ot-medicine-time').value;
+        var otReason = document.getElementById('ot-reason').value;
+        if (document.getElementById('g-report-appt-end')) document.getElementById('g-report-appt-end').textContent = otEnd;
+        if (document.getElementById('g-report-medicine-time')) document.getElementById('g-report-medicine-time').textContent = otMed;
+        if (document.getElementById('g-report-ot-reason')) document.getElementById('g-report-ot-reason').textContent = otReason;
+
+        toast('Overtime report submitted!');
+
+        // Update progress to all complete
+        updateProgressTracker(6);
+    }
+}
+
+// ============ UTILITIES ============
+function doLogout() {
+    currentRole = null;
+    go('login');
+    toast('Signed out');
+}
+
+function toast(msg) {
+    const box = document.getElementById('toast-box');
+    const t = document.createElement('div');
+    t.className = 'toast bg-sf-900 dark:bg-white text-white dark:text-sf-900 rounded-2xl px-5 py-3 text-sm font-medium shadow-2xl text-center mb-2';
+    t.textContent = msg;
+    box.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+}
+
+// ============ INIT ============
+setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => {
+        const s = document.getElementById('splash');
+        if(s) s.remove();
+    }, 500);
+
+    go('login');
+}, 1200);
+</script>
+
+
+
+</body></html>
